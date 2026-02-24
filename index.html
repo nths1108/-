@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>人生不能重來 RPG - 傳奇冒險系統 V6.3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>人生不能重來 RPG - 傳奇冒險系統 V6.5 Touch Enabled</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -16,28 +16,10 @@
             font-family: 'Noto Sans TC', sans-serif; 
             color: #f8fafc;
             user-select: none;
+            touch-action: none; /* 防止瀏覽器預設手勢干擾 3D 操作 */
         }
         
-        canvas { display: block; cursor: crosshair; }
-
-        /* 標題畫面 */
-        #title-screen {
-            background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
-            z-index: 1000;
-        }
-
-        .floating-icon {
-            position: absolute; font-size: 3.5rem; opacity: 0.15;
-            animation: float-slow 8s infinite ease-in-out; pointer-events: none;
-        }
-
-        @keyframes float-slow {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-30px) rotate(15deg); }
-        }
-
-        .press-start { animation: blink 1.5s infinite; text-shadow: 0 0 15px #6366f1; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        canvas { display: block; cursor: move; }
 
         /* 側邊欄玻璃擬態 */
         .glass-panel {
@@ -66,10 +48,9 @@
         }
         .shake-effect { animation: shake 0.2s ease-in-out 3; }
 
-        /* 修正文字直書問題的 Badge */
         .rank-badge {
             display: inline-block;
-            white-space: nowrap; /* 強制橫向 */
+            white-space: nowrap;
             min-width: max-content;
             padding: 4px 14px;
             font-size: 11px;
@@ -91,17 +72,13 @@
 
     <!-- 標題畫面 -->
     <div id="title-screen" class="fixed inset-0 flex flex-col items-center justify-center transition-opacity duration-1000">
-        <div class="floating-icon" style="top: 15%; left: 10%;">⚔️</div>
-        <div class="floating-icon" style="top: 20%; right: 15%;">🔮</div>
-        <div class="floating-icon" style="bottom: 25%; left: 20%;">💎</div>
-        <div class="floating-icon" style="bottom: 15%; right: 10%;">👑</div>
         <h1 class="pixel-title-main mb-4">人生不能重來 RPG</h1>
         <p class="text-indigo-400 font-bold tracking-[0.6em] mb-14 uppercase opacity-80">Legendary Adventure System</p>
         <button onclick="startGame()" class="start-btn group px-24 py-10 rounded-[2.5rem] relative overflow-hidden transition-all hover:scale-110">
             <span class="relative z-10 text-4xl font-black text-white press-start">PRESS START</span>
             <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
         </button>
-        <p class="mt-20 text-slate-500 font-mono text-xs tracking-widest">VER 6.3 VISUAL MASTER • DATA SHIELDED</p>
+        <p class="mt-20 text-slate-500 font-mono text-xs tracking-widest uppercase">V6.5 Tablet & Touch Optimized</p>
     </div>
 
     <!-- UI 層 -->
@@ -118,7 +95,7 @@
                 <div>
                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] ml-1">戰區地圖控制</label>
                     <div class="flex gap-2 mt-2">
-                        <select id="classSelector" onchange="switchClass(this.value)" class="flex-grow bg-slate-950 border-2 border-slate-800 text-white rounded-2xl p-3.5 text-sm focus:outline-none focus:border-indigo-500 shadow-inner">
+                        <select id="classSelector" onchange="switchClass(this.value)" class="flex-grow bg-slate-950 border-2 border-slate-800 text-white rounded-2xl p-3.5 text-sm focus:outline-none focus:border-indigo-500">
                         </select>
                         <button onclick="promptAddClass()" class="bg-indigo-600 hover:bg-indigo-500 px-5 py-2 rounded-2xl text-white font-bold shadow-lg transition-all active:scale-90">＋</button>
                     </div>
@@ -153,7 +130,7 @@
     <!-- 彈窗控制 -->
     <div id="modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-4">
         <div class="bg-slate-900 w-full max-w-lg p-12 border-2 border-slate-700 rounded-[4rem] shadow-2xl">
-            <h3 id="modalTitle" class="text-3xl font-black text-indigo-400 mb-4 italic"></h3>
+            <h3 id="modalTitle" class="text-3xl font-black text-indigo-400 mb-4 italic tracking-tight"></h3>
             <p id="modalText" class="text-slate-400 text-sm mb-8 leading-relaxed font-bold"></p>
             <div id="modalInputArea" class="hidden mb-8">
                 <input type="text" id="modalInput" class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl px-7 py-5 text-white outline-none">
@@ -189,6 +166,20 @@
             evolve() { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => this.play(f, 'sawtooth', 0.7, 0.02), i * 180)); }
         };
 
+        // --- 浮空文字 ---
+        class FloatingText {
+            constructor(text, pos, color) {
+                const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128;
+                const ctx = canvas.getContext('2d'); ctx.font = "bold 90px 'Noto Sans TC'";
+                ctx.fillStyle = color; ctx.textAlign = "center"; ctx.shadowColor = "black"; ctx.shadowBlur = 20; ctx.fillText(text, 256, 90);
+                this.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true }));
+                this.sprite.position.copy(pos).y += 10; this.sprite.scale.set(15, 3.75, 1);
+                this.life = 1.0; scene.add(this.sprite);
+            }
+            update() { this.sprite.position.y += 0.18; this.life -= 0.015; this.sprite.material.opacity = this.life; return this.life > 0; }
+            destroy() { scene.remove(this.sprite); this.sprite.material.map.dispose(); this.sprite.material.dispose(); }
+        }
+
         // --- 全域變數 ---
         let scene, camera, renderer, raycaster, mouse;
         let starField, charMeshes = {}, labelSprites = {}, particles = [], floatingTexts = [];
@@ -196,26 +187,18 @@
         let user = null, db, auth, unsubscribe = null;
         let localDataStore = { "冒險組 A": [] }; 
 
+        // --- 交互控制變數 ---
+        let isPointerDown = false;
+        let pointerStartX = 0, pointerStartY = 0;
+        let lastPointerX = 0, lastPointerY = 0;
+        let cameraBaseX = 0, cameraBaseY = 0;
+        let isMovingCamera = false;
+        let initialPinchDistance = 0;
+        let cameraBaseZ = 140;
+
         const firebaseConfig = (function() { try { return JSON.parse(__firebase_config); } catch(e) { return null; } })();
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'hero-rpg-v6-3';
         const isLocal = !firebaseConfig;
-
-        // --- 持久化與工具 ---
-        const saveToLocalStorage = () => localStorage.setItem('hero_rpg_backup', JSON.stringify(localDataStore));
-        const loadFromLocalStorage = () => {
-            const backup = localStorage.getItem('hero_rpg_backup');
-            if (backup) {
-                localDataStore = JSON.parse(backup);
-                availableClasses = Object.keys(localDataStore);
-                if (availableClasses.length === 0) availableClasses = ["冒險組 A"];
-            }
-        };
-        const getStableRole = (name) => {
-            const roles = ['warrior', 'mage', 'assassin'];
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
-            return roles[hash % 3];
-        };
 
         const ROLES = {
             warrior: { name: '戰士', color: '#ef4444', ranks: [{ min: 1, title: '初級劍士', badge: 'rank-bronze' }, { min: 5, title: '皇家騎士', badge: 'rank-silver' }, { min: 10, title: '傳說劍聖', badge: 'rank-gold' }, { min: 20, title: '屠龍勇者', badge: 'rank-legendary' }] },
@@ -228,12 +211,10 @@
             return [...r.ranks].reverse().find(x => lv >= x.min) || r.ranks[0];
         };
 
-        // --- 核心渲染 ---
         const createCharTexture = (role, level, gender, studentId) => {
             const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512;
             const ctx = canvas.getContext('2d'); const cx = 256; const roleData = ROLES[role] || ROLES.warrior;
             const hairHash = (studentId || "abc").split("").reduce((a,b)=>((a<<5)-a)+b.charCodeAt(0),0);
-            
             if (level >= 10) {
                 const g = ctx.createRadialGradient(cx, 220, 20, cx, 220, 280);
                 g.addColorStop(0, roleData.color + '88'); if (level >= 20) g.addColorStop(0.5, '#fbbf2477'); g.addColorStop(1, 'transparent');
@@ -273,8 +254,7 @@
             ctx.fillStyle = level >= 20 ? '#6366f1' : '#111827';
             ctx.beginPath(); ctx.arc(cx - 45, 190, 15, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(cx + 45, 190, 15, 0, Math.PI * 2); ctx.fill();
             const hCol = gender === 'male' ? '#1e293b' : '#e11d48';
-            ctx.fillStyle = hCol;
-            ctx.beginPath(); ctx.arc(cx, 140, 120, Math.PI, 0); ctx.fill();
+            ctx.fillStyle = hCol; ctx.beginPath(); ctx.arc(cx, 140, 120, Math.PI, 0); ctx.fill();
             if(Math.abs(hairHash)%2===0) { ctx.fillRect(cx-120, 140, 60, 210); ctx.fillRect(cx+60, 140, 60, 210); } 
             else { ctx.fillRect(cx-120, 140, 240, 80); ctx.clearRect(cx-30, 140, 60, 40); }
             return new THREE.CanvasTexture(canvas);
@@ -318,10 +298,99 @@
             starField = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x6366f1, size: 2.0, transparent: true, opacity: 0.7 }));
             scene.add(starField);
             scene.add(new THREE.AmbientLight(0xffffff, 1.8));
+
+            // --- 事件監聽 (滑鼠與觸控統一) ---
             window.addEventListener('resize', onWindowResize);
-            window.addEventListener('click', onSceneClick);
+            const canvas = renderer.domElement;
+            canvas.addEventListener('pointerdown', onPointerDown);
+            canvas.addEventListener('pointermove', onPointerMove);
+            canvas.addEventListener('pointerup', onPointerUp);
+            canvas.addEventListener('wheel', onMouseWheel, { passive: false });
+            
+            // 觸控專屬縮放監聽
+            canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', onTouchMove, { passive: false });
         }
 
+        // --- 交互邏輯實作 ---
+        function onPointerDown(e) {
+            isPointerDown = true;
+            pointerStartX = e.clientX;
+            pointerStartY = e.clientY;
+            lastPointerX = e.clientX;
+            lastPointerY = e.clientY;
+            isMovingCamera = false;
+        }
+
+        function onPointerMove(e) {
+            if (!isPointerDown) return;
+            
+            const dx = e.clientX - lastPointerX;
+            const dy = e.clientY - lastPointerY;
+            const totalDist = Math.hypot(e.clientX - pointerStartX, e.clientY - pointerStartY);
+
+            if (totalDist > 5) {
+                isMovingCamera = true;
+                // 根據 Z 軸距離調整移動靈敏度
+                const sensitivity = camera.position.z / 1000;
+                cameraBaseX -= dx * sensitivity;
+                cameraBaseY += dy * sensitivity;
+            }
+
+            lastPointerX = e.clientX;
+            lastPointerY = e.clientY;
+        }
+
+        function onPointerUp(e) {
+            if (!isMovingCamera) {
+                // 如果沒有明顯移動，則視為點擊
+                processClick(e.clientX, e.clientY);
+            }
+            isPointerDown = false;
+            isMovingCamera = false;
+        }
+
+        function onMouseWheel(e) {
+            e.preventDefault();
+            const delta = e.deltaY * 0.05;
+            cameraBaseZ = Math.min(Math.max(cameraBaseZ + delta, 50), 1000);
+        }
+
+        // 觸控手勢處理 (雙指縮放)
+        function onTouchStart(e) {
+            if (e.touches.length === 2) {
+                initialPinchDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+            }
+        }
+
+        function onTouchMove(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const dist = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                const delta = (initialPinchDistance - dist) * 0.5;
+                cameraBaseZ = Math.min(Math.max(cameraBaseZ + delta, 50), 1000);
+                initialPinchDistance = dist;
+            }
+        }
+
+        function processClick(clientX, clientY) {
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(Object.values(charMeshes));
+            if (intersects.length > 0) {
+                const id = intersects[0].object.userData.id;
+                changePoints(id, 1);
+            }
+        }
+
+        // --- Firebase 與 資料邏輯 ---
         async function initFirebase() {
             const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth);
@@ -338,17 +407,26 @@
         }
 
         function initLocalData() {
-            loadFromLocalStorage(); updateClassSelector(); switchClass(currentClass);
+            const savedData = localStorage.getItem('hero_rpg_backup');
+            if(savedData) localDataStore = JSON.parse(savedData);
+            updateClassSelector(); switchClass(currentClass);
         }
 
         function updateClassSelector() {
             document.getElementById('classSelector').innerHTML = availableClasses.map(c => `<option value="${c}" ${c===currentClass?'selected':''}>${c}</option>`).join('');
         }
 
+        const saveToLocalStorage = () => localStorage.setItem('hero_rpg_backup', JSON.stringify(localDataStore));
+        const getStableRole = (name) => {
+            const roles = ['warrior', 'mage', 'assassin'];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
+            return roles[hash % 3];
+        };
+
         window.switchClass = (className) => {
             currentClass = className;
             students = []; renderStudentList();
-            // 物理性清理所有舊角色
             Object.keys(charMeshes).forEach(id => { 
                 if(charMeshes[id].material.map) charMeshes[id].material.map.dispose();
                 scene.remove(charMeshes[id]); 
@@ -356,7 +434,6 @@
                 scene.remove(labelSprites[id]); 
             });
             charMeshes = {}; labelSprites = {};
-
             if (isLocal) { 
                 students = [...(localDataStore[className] || [])];
                 renderStudentList(); sync3D(); return; 
@@ -384,9 +461,7 @@
                             <span class="text-3xl filter drop-shadow-xl flex-shrink-0">${s.gender==='male'?'👤':'👩'}</span>
                             <div class="flex flex-col overflow-hidden">
                                 <h4 class="text-base font-black text-white tracking-tight truncate">${s.name}</h4>
-                                <div class="mt-1 flex-shrink-0">
-                                    <span class="rank-badge ${rank.badge}">${rank.title}</span>
-                                </div>
+                                <div class="mt-1 flex-shrink-0"><span class="rank-badge ${rank.badge}">${rank.title}</span></div>
                             </div>
                         </div>
                         <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
@@ -410,11 +485,9 @@
             const idx = students.findIndex(x => x.id === id); if (idx === -1) return;
             const op = students[idx].points || 0; const ol = students[idx].level || 1;
             const np = Math.max(0, op + delta); const nl = Math.floor(np / 5) + 1;
-            
             students[idx].points = np; students[idx].level = nl;
             renderStudentList(); sync3D(); 
             if (delta > 0) { SoundFX.coin(); spawnParticles(id, 15); if (nl > ol) triggerLevelUp(students[idx], ol, nl); } else SoundFX.click();
-
             try {
                 if (isLocal) { localDataStore[currentClass] = [...students]; saveToLocalStorage(); } 
                 else { if (!user) return; await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students_' + currentClass, id), { points: np, level: nl }); }
@@ -437,12 +510,10 @@
             }
         }
 
-        // --- 核心：視角自適應與標籤修正 ---
+        // --- 自動視角初始值計算 ---
         function sync3D() {
             if (!scene || students.length === 0) return;
             const ids = students.map(s => s.id);
-            
-            // 清理已刪除英雄
             Object.keys(charMeshes).forEach(id => { 
                 if (!ids.includes(id)) { 
                     if(charMeshes[id].material.map) charMeshes[id].material.map.dispose();
@@ -465,11 +536,18 @@
             const visRatio = availableW / screenW;
             const reqZ_W = (groupW / visRatio) / (2 * Math.tan(fovRad) * camera.aspect);
             const reqZ_H = groupH / (2 * Math.tan(fovRad));
+            
+            // 計算理想初始位置
             const targetZ = Math.max(180, reqZ_W * 1.8, reqZ_H * 1.8); 
-            camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.05);
-            const totalWWorld = 2 * Math.tan(fovRad) * camera.position.z * camera.aspect;
+            const totalWWorld = 2 * Math.tan(fovRad) * targetZ * camera.aspect;
             const offsetX = (sidebarW / screenW) * totalWWorld * 0.58; 
-            camera.position.x = THREE.MathUtils.lerp(camera.position.x, -offsetX, 0.05);
+
+            // 只在切換班級或剛開始時自動定位，其餘時間手動控制
+            if (!isMovingCamera && !isPointerDown) {
+                cameraBaseX = -offsetX;
+                cameraBaseY = 0;
+                cameraBaseZ = targetZ;
+            }
 
             students.forEach((s, i) => {
                 const curRow = Math.floor(i / cols);
@@ -477,7 +555,6 @@
                 const x = (i % cols - (rowL - 1) / 2) * gap; 
                 const y = -curRow * gap * 1.5;
                 const lv = s.level || 1; const scale = 22 + (lv * 0.35);
-                
                 if (!charMeshes[s.id]) {
                     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: createCharTexture(s.role, lv, s.gender, s.id), transparent: true }));
                     sp.position.set(x, y, 0); sp.scale.set(scale, scale, 1); sp.userData = { id: s.id, lastLv: lv };
@@ -493,7 +570,6 @@
                     }
                     sp.position.lerp(new THREE.Vector3(x, y, 0), 0.1); sp.scale.lerp(new THREE.Vector3(scale, scale, 1), 0.1);
                     const label = labelSprites[s.id];
-                    // 修正：手動釋放舊標籤貼圖，防止顯示失敗
                     if(label.material.map) label.material.map.dispose();
                     label.material.map = createLabelTexture(s);
                     label.position.set(x, y + scale/2 + 7, 1);
@@ -514,6 +590,12 @@
         function animate() {
             requestAnimationFrame(animate); const t = Date.now() * 0.002;
             if (starField) { starField.rotation.y += 0.0008; starField.rotation.x += 0.00025; }
+            
+            // 攝影機平滑插值到目標位置
+            camera.position.x = THREE.MathUtils.lerp(camera.position.x, cameraBaseX, 0.1);
+            camera.position.y = THREE.MathUtils.lerp(camera.position.y, cameraBaseY, 0.1);
+            camera.position.z = THREE.MathUtils.lerp(camera.position.z, cameraBaseZ, 0.1);
+
             Object.values(charMeshes).forEach(m => {
                 m.position.y += Math.sin(t + m.position.x) * 0.08;
                 m.rotation.z = Math.sin(t * 0.5 + m.position.x) * 0.05; 
@@ -525,14 +607,6 @@
             }
             for(let i=floatingTexts.length-1; i>=0; i--) if(!floatingTexts[i].update()){ floatingTexts[i].destroy(); floatingTexts.splice(i, 1); }
             renderer.render(scene, camera);
-        }
-
-        function onSceneClick(e) {
-            if (e.target.tagName !== 'CANVAS') return;
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            const ints = raycaster.intersectObjects(Object.values(charMeshes));
-            if (ints.length > 0) changePoints(ints[0].object.userData.id, 1);
         }
 
         function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); sync3D(); }
@@ -558,7 +632,7 @@
 
         window.editClassList = () => {
             const target = currentClass;
-            window.showModal(`英雄召喚 (${target})`, "每行輸入英雄姓名：", async (text) => {
+            window.showModal(`英雄召喚儀式 (${target})`, "每行輸入英雄姓名：", async (text) => {
                 const names = text.split('\n').map(n => n.trim()).filter(n => n !== '');
                 const cleanNames = [...new Set(names)];
                 if (isLocal) { 
