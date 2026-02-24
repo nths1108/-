@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>人生不能重來 RPG - 傳奇冒險系統 V7.0 Stable</title>
+    <title>人生不能重來 RPG - 傳奇冒險系統 V6.8 Final Stable</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -16,287 +16,602 @@
             font-family: 'Noto Sans TC', sans-serif; 
             color: #f8fafc;
             user-select: none;
-            -webkit-tap-highlight-color: transparent;
             touch-action: none; 
         }
         
         canvas { display: block; cursor: move; }
 
         .glass-panel {
-            background: rgba(10, 15, 32, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-right: 2px solid rgba(99, 102, 241, 0.3);
+            background: rgba(10, 15, 32, 0.98);
+            backdrop-filter: blur(40px);
+            border-right: 2px solid rgba(99, 102, 241, 0.4);
+            box-shadow: 20px 0 60px rgba(0,0,0,1);
             z-index: 20;
         }
 
         .pixel-title-main {
-            font-size: clamp(2rem, 8vw, 3.5rem); 
-            font-weight: 950;
+            font-size: 3.5rem; font-weight: 950;
             background: linear-gradient(to bottom, #fbbf24, #d97706);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.6));
             letter-spacing: -2px; font-style: italic;
         }
 
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
 
         .rank-badge {
             display: inline-block;
             white-space: nowrap; 
-            padding: 2px 10px;
-            font-size: 10px;
+            min-width: max-content;
+            padding: 4px 14px;
+            font-size: 11px;
             font-weight: 900;
-            border-radius: 6px;
+            border-radius: 8px;
             text-transform: uppercase;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .rank-bronze { background: #78350f; color: #fde68a; }
-        .rank-silver { background: #334155; color: #f1f5f9; }
-        .rank-gold { background: #b45309; color: #fff; box-shadow: 0 0 10px #fbbf24; }
-        .rank-legendary { background: #be123c; color: #fff; animation: glow-pulse 1s infinite alternate; }
+        .rank-bronze { background: linear-gradient(135deg, #78350f, #451a03); color: #fde68a; }
+        .rank-silver { background: linear-gradient(135deg, #475569, #1e293b); color: #f1f5f9; }
+        .rank-gold { background: linear-gradient(135deg, #b45309, #92400e); color: #fff; box-shadow: 0 0 15px #fbbf24; border-color: #fbbf24; }
+        .rank-legendary { background: linear-gradient(135deg, #be123c, #4c0519); color: #fecdd3; animation: glow-pulse 1s infinite alternate; border-color: #f43f5e; }
 
-        @keyframes glow-pulse { from { box-shadow: 0 0 4px #f43f5e; } to { box-shadow: 0 0 12px #f43f5e; } }
+        @keyframes glow-pulse { from { box-shadow: 0 0 5px #f43f5e; } to { box-shadow: 0 0 20px #f43f5e; } }
         
         .start-btn {
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            box-shadow: 0 0 30px rgba(79, 70, 229, 0.4);
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.5), inset 0 0 15px rgba(255,255,255,0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
-        .press-start { animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
-        /* 針對平板優化按鈕點擊範圍 */
-        .touch-target { min-height: 44px; min-width: 44px; }
-
-        .shake-effect { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } }
+        .press-start { animation: blink 1.5s infinite; text-shadow: 0 0 15px #6366f1; }
     </style>
 </head>
 <body>
 
-    <div id="title-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950 transition-opacity duration-700">
+    <!-- 初始畫面 -->
+    <div id="title-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950 transition-opacity duration-1000">
         <h1 class="pixel-title-main mb-4">人生不能重來 RPG</h1>
-        <p class="text-indigo-400 font-bold tracking-[0.4em] mb-14 uppercase opacity-80 text-center px-4">Legendary Adventure Engine V7.0</p>
-        <button onclick="startGame()" class="start-btn group px-16 py-8 rounded-[2rem] transition-all active:scale-95">
-            <span class="text-2xl font-black text-white press-start">ENTER WORLD</span>
+        <p class="text-indigo-400 font-bold tracking-[0.6em] mb-14 uppercase opacity-80">Legendary Adventure Engine</p>
+        <button onclick="startGame()" class="start-btn group px-24 py-10 rounded-[2.5rem] relative overflow-hidden transition-all hover:scale-110">
+            <span class="relative z-10 text-4xl font-black text-white press-start">PRESS START</span>
+            <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
         </button>
+        <p class="mt-20 text-slate-500 font-mono text-xs tracking-widest uppercase">V6.8 Final Stable • Visual MASTER</p>
     </div>
 
+    <!-- UI 層 -->
     <div id="ui-layer" class="hidden fixed inset-0 z-10 pointer-events-none flex">
-        <div id="sidebar" class="w-72 md:w-80 h-full glass-panel pointer-events-auto flex flex-col p-5 shadow-2xl">
-            <header class="mb-6">
-                <h2 class="text-indigo-400 font-black text-xl italic tracking-tighter flex items-center gap-2">🛡️ HEROES GUILD</h2>
-                <div class="h-1 w-16 bg-indigo-500 mt-1 rounded-full"></div>
+        <div id="sidebar" class="w-80 h-full glass-panel pointer-events-auto flex flex-col p-6 shadow-2xl">
+            <header class="mb-10">
+                <h2 class="text-indigo-400 font-black text-2xl italic tracking-tighter flex items-center gap-3">🛡️ HEROES GUILD</h2>
+                <div class="h-1.5 w-24 bg-gradient-to-r from-indigo-500 to-transparent mt-2 rounded-full"></div>
             </header>
 
-            <div class="space-y-4 mb-6">
+            <div class="space-y-6 mb-8">
                 <div>
-                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">戰區據點</label>
-                    <div class="flex gap-2 mt-1">
-                        <select id="classSelector" onchange="switchClass(this.value)" class="flex-grow bg-slate-950 border-2 border-slate-800 text-white rounded-xl p-3 text-sm focus:outline-none">
-                            </select>
-                        <button onclick="promptAddClass()" class="bg-indigo-600 px-4 py-2 rounded-xl text-white font-bold touch-target">＋</button>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] ml-1">據點切換</label>
+                    <div class="flex gap-2 mt-2">
+                        <select id="classSelector" onchange="switchClass(this.value)" class="flex-grow bg-slate-950 border-2 border-slate-800 text-white rounded-2xl p-3.5 text-sm focus:outline-none focus:border-indigo-500 shadow-inner">
+                        </select>
+                        <button onclick="promptAddClass()" class="bg-indigo-600 hover:bg-indigo-500 px-5 py-2 rounded-2xl text-white font-bold shadow-lg transition-transform active:scale-90">＋</button>
                     </div>
                 </div>
-                <button onclick="editClassList()" class="w-full bg-slate-800/60 py-4 text-xs font-black border border-slate-700 rounded-2xl flex items-center justify-center gap-2">
-                    ⚔️ 編輯英雄名單
+                <button onclick="editClassList()" class="w-full bg-slate-800/40 hover:bg-indigo-900/50 py-5 text-xs font-black border-2 border-slate-800 rounded-3xl flex items-center justify-center gap-3 transition-all">
+                    ⚔️ 編輯目前英雄名單
                 </button>
-                <input type="text" id="studentSearch" oninput="renderStudentList()" placeholder="搜尋..." 
-                    class="w-full bg-slate-950 border-2 border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500">
+                <input type="text" id="studentSearch" oninput="renderStudentList()" placeholder="搜尋姓名、稱號..." 
+                    class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl px-6 py-4 text-sm text-white focus:outline-none focus:border-indigo-500 shadow-inner">
             </div>
 
-            <div class="flex-grow overflow-y-auto custom-scrollbar pr-1 space-y-3" id="studentListUI"></div>
+            <div class="flex-grow overflow-y-auto custom-scrollbar pr-1 space-y-4" id="studentListUI"></div>
 
-            <footer class="mt-4 pt-4 border-t border-slate-800 flex gap-2">
-                <button onclick="exportData()" class="flex-grow bg-emerald-700 py-3 text-[10px] font-black rounded-xl">匯出戰報</button>
-                <button onclick="confirmDeleteClass()" class="bg-rose-950/80 px-4 py-3 text-xs rounded-xl border border-rose-900">🗑️</button>
+            <footer class="mt-6 pt-6 border-t border-slate-800 flex gap-3">
+                <button onclick="exportData()" class="flex-grow bg-emerald-700 hover:bg-emerald-600 py-4 text-xs font-black rounded-2xl transition-all shadow-xl active:scale-95">匯出戰報</button>
+                <button onclick="confirmDeleteClass()" class="bg-rose-950/80 hover:bg-rose-800 px-6 py-4 text-xs font-black rounded-2xl border border-rose-900">🗑️</button>
             </footer>
         </div>
 
         <div id="level-up-overlay" class="flex-grow flex items-center justify-center pointer-events-none">
-            <div id="notice-box" class="opacity-0 scale-50 transition-all duration-500 bg-slate-900/98 border-y-4 border-yellow-500 px-10 py-8 text-center shadow-2xl rounded-3xl">
-                <h3 class="text-yellow-400 text-4xl font-black italic mb-2">EVOLUTION!</h3>
-                <p id="notice-text" class="text-xl text-white font-bold"></p>
+            <div id="notice-box" class="opacity-0 scale-50 translate-y-20 transition-all duration-700 bg-slate-900/98 border-t-8 border-b-8 border-yellow-500 px-24 py-16 text-center shadow-[0_0_300px_rgba(234,179,8,0.6)] rounded-[5rem]">
+                <h3 class="text-yellow-400 text-9xl font-black italic mb-4 tracking-tighter">EVOLUTION!</h3>
+                <p id="notice-text" class="text-4xl text-white font-black tracking-[0.4em] uppercase"></p>
             </div>
         </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
-    <div id="modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-6">
-        <div class="bg-slate-900 w-full max-w-md p-8 border border-slate-700 rounded-[2rem] shadow-2xl">
-            <h3 id="modalTitle" class="text-2xl font-black text-indigo-400 mb-2 italic"></h3>
-            <p id="modalText" class="text-slate-400 text-sm mb-6"></p>
-            <div id="modalInputArea" class="hidden mb-6">
-                <input type="text" id="modalInput" class="w-full bg-slate-950 border-2 border-slate-800 rounded-xl px-4 py-3 text-white outline-none">
+    <div id="modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-4">
+        <div class="bg-slate-900 w-full max-w-md p-12 border-2 border-slate-700 rounded-[4rem] shadow-2xl">
+            <h3 id="modalTitle" class="text-3xl font-black text-indigo-400 mb-4 italic tracking-tight"></h3>
+            <p id="modalText" class="text-slate-400 text-sm mb-8 leading-relaxed font-bold"></p>
+            <div id="modalInputArea" class="hidden mb-8">
+                <input type="text" id="modalInput" class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl px-7 py-5 text-white outline-none">
             </div>
-            <div id="modalTextareaArea" class="hidden mb-6">
-                <textarea id="modalTextarea" rows="8" class="w-full bg-slate-950 border-2 border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none custom-scrollbar"></textarea>
+            <div id="modalTextareaArea" class="hidden mb-8">
+                <textarea id="modalTextarea" rows="12" class="w-full bg-slate-950 border-2 border-slate-800 rounded-3xl px-7 py-5 text-sm text-white outline-none custom-scrollbar"></textarea>
             </div>
-            <div class="flex justify-end gap-4">
-                <button onclick="closeModal()" class="px-6 py-3 text-sm font-bold text-slate-500">CANCEL</button>
-                <button id="modalConfirmBtn" class="px-8 py-3 bg-indigo-600 rounded-xl text-sm font-black text-white">CONFIRM</button>
+            <div class="flex justify-end gap-6">
+                <button onclick="closeModal()" class="px-10 py-4 text-sm font-bold text-slate-500 hover:text-white transition-colors">CANCEL</button>
+                <button id="modalConfirmBtn" class="px-16 py-4 bg-indigo-600 rounded-3xl text-sm font-black text-white shadow-2xl hover:bg-indigo-500 active:scale-95">CONFIRM</button>
             </div>
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- 全域變數 ---
+        let scene, camera, renderer, raycaster, mouse;
+        let starField, charMeshes = {}, labelSprites = {}, particles = [], floatingTexts = [];
+        let students = [], currentClass = "冒險組 A", availableClasses = ["冒險組 A"];
+        let user = null, db, auth, unsubscribe = null;
+        let localDataStore = { "冒險組 A": [] }; 
+
+        // --- 交互控制 ---
+        let isPointerDown = false;
+        let pointerStartX = 0, pointerStartY = 0;
+        let lastPointerX = 0, lastPointerY = 0;
+        let cameraBaseX = 0, cameraBaseY = 0;
+        let isMovingCamera = false;
+        let initialPinchDistance = 0;
+        let cameraBaseZ = 160;
+
+        const firebaseConfig = (function() { try { return JSON.parse(__firebase_config); } catch(e) { return null; } })();
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hero-rpg-v6-8';
+        const isLocal = !firebaseConfig;
+
         // --- 音效引擎 ---
-        const SoundFX = {
+        const SoundSystem = {
             ctx: null,
             init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
-            play(freq, type, duration, vol = 0.05) {
-                try {
-                    this.init(); const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
-                    osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                    gain.gain.setValueAtTime(vol, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-                    osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration);
-                } catch(e) {}
+            play(freq, type, duration, vol = 0.1) {
+                this.init(); const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration);
             },
-            click() { this.play(800, 'sine', 0.1); },
-            coin() { this.play(1000, 'triangle', 0.2); },
-            levelUp() { this.play(600, 'square', 0.4); }
+            click() { this.play(850, 'sine', 0.12, 0.06); },
+            coin() { this.play(1100, 'triangle', 0.2, 0.06); setTimeout(() => this.play(1400, 'triangle', 0.2, 0.06), 60); },
+            levelUp() { this.play(600, 'square', 0.3, 0.04); setTimeout(() => this.play(900, 'square', 0.4, 0.04), 120); },
+            evolve() { [440, 554, 659, 880, 1108].forEach((f, i) => setTimeout(() => this.play(f, 'sawtooth', 0.7, 0.025), i * 180)); }
         };
 
-        // --- 核心變數 ---
-        let scene, camera, renderer, raycaster, mouse;
-        let charMeshes = {}, labelSprites = {}, particles = [];
-        let students = [], currentClass = "冒險組 A", availableClasses = ["冒險組 A"];
-        let localDataStore = { "冒險組 A": [] };
+        // --- 核心輔助宣告 ---
 
-        // --- 觸控邏輯優化 ---
-        let isPointerDown = false;
-        let lastPointerX = 0, lastPointerY = 0;
-        let cameraBaseX = 0, cameraBaseY = 0, cameraBaseZ = 200;
-        let isMovingCamera = false;
+        const ROLES = {
+            warrior: { name: '戰士', color: '#ef4444', ranks: [{ min: 1, title: '初級劍士', badge: 'rank-bronze' }, { min: 5, title: '皇家騎士', badge: 'rank-silver' }, { min: 10, title: '傳說劍聖', badge: 'rank-gold' }, { min: 20, title: '屠龍勇者', badge: 'rank-legendary' }] },
+            mage: { name: '法師', color: '#8b5cf6', ranks: [{ min: 1, title: '魔法學徒', badge: 'rank-bronze' }, { min: 5, title: '元素領主', badge: 'rank-silver' }, { min: 10, title: '大賢者', badge: 'rank-gold' }, { min: 20, title: '至尊大法師', badge: 'rank-legendary' }] },
+            assassin: { name: '刺客', color: '#10b981', ranks: [{ min: 1, title: '影之追隨', badge: 'rank-bronze' }, { min: 5, title: '暗影刺客', badge: 'rank-silver' }, { min: 10, title: '幻影大師', badge: 'rank-gold' }, { min: 20, title: '虛空行者', badge: 'rank-legendary' }] }
+        };
 
-        // --- 初始化資料 (確保平板關閉後資料還在) ---
-        function initData() {
-            const savedClasses = localStorage.getItem('rpg_classes');
-            const savedData = localStorage.getItem('rpg_data');
-            const savedLast = localStorage.getItem('rpg_last_class');
+        function getRank(role, lv) {
+            const r = ROLES[role] || ROLES.warrior;
+            return [...r.ranks].reverse().find(x => lv >= x.min) || r.ranks[0];
+        }
 
-            if (savedClasses) availableClasses = JSON.parse(savedClasses);
-            if (savedData) localDataStore = JSON.parse(savedData);
-            if (savedLast && availableClasses.includes(savedLast)) currentClass = savedLast;
-            
+        function createCharTexture(role, level, gender, studentId) {
+            const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d'); const cx = 256; const roleData = ROLES[role] || ROLES.warrior;
+            const hairHash = (studentId || "abc").split("").reduce((a,b)=>((a<<5)-a)+b.charCodeAt(0),0);
+            if (level >= 10) {
+                const g = ctx.createRadialGradient(cx, 220, 20, cx, 220, 280);
+                g.addColorStop(0, roleData.color + '88'); if (level >= 20) g.addColorStop(0.5, '#fbbf2477'); g.addColorStop(1, 'transparent');
+                ctx.fillStyle = g; ctx.fillRect(0,0,512,512);
+            }
+            if (level >= 5) {
+                ctx.fillStyle = level >= 15 ? '#1e1b4b' : (role === 'assassin' ? '#064e3b' : '#4c0519');
+                ctx.beginPath(); ctx.moveTo(cx-135, 285); ctx.lineTo(cx+135, 285); ctx.lineTo(cx+190, 512); ctx.lineTo(cx-190, 512); ctx.closePath(); ctx.fill();
+            }
+            ctx.save();
+            const wCol = level >= 20 ? '#fbbf24' : (level >= 10 ? '#f1f5f9' : (level >= 5 ? '#cbd5e1' : '#78350f'));
+            ctx.fillStyle = wCol; ctx.strokeStyle = '#000'; ctx.lineWidth = 3.5;
+            if (role === 'warrior') {
+                ctx.translate(cx + 130, 330); ctx.rotate(Math.PI / 10);
+                const ww = 22 + (level * 1.2); const wh = 190 + (level * 4.5);
+                ctx.beginPath(); ctx.moveTo(-ww/2, 0); ctx.lineTo(ww/2, 0); ctx.lineTo(0, -wh); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#451a03'; ctx.fillRect(-ww, 0, ww*2, 18);
+            } else if (role === 'mage') {
+                ctx.translate(cx - 150, 330); ctx.fillStyle = '#451a03'; ctx.fillRect(-10, 0, 20, -280);
+                ctx.fillStyle = level >= 10 ? '#6366f1' : '#f43f5e';
+                ctx.beginPath(); ctx.arc(0, -290, 45 + (level * 0.9), 0, Math.PI*2); ctx.fill();
+                if(level >= 10) { ctx.strokeStyle = '#fff'; ctx.stroke(); }
+            } else {
+                ctx.translate(cx + 125, 415); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(28, -130); ctx.lineTo(-28, -130); ctx.closePath(); ctx.fill(); ctx.stroke();
+                if(level >= 10) { ctx.restore(); ctx.save(); ctx.fillStyle = wCol; ctx.strokeStyle = '#000'; ctx.translate(cx - 125, 415); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(28, -130); ctx.lineTo(-28, -130); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+            }
+            ctx.restore();
+            const armC = level < 10 ? roleData.color : '#fbbf24';
+            const bG = ctx.createLinearGradient(cx - 120, 300, cx + 120, 300);
+            bG.addColorStop(0, armC); bG.addColorStop(0.5, '#fffB'); bG.addColorStop(1, armC);
+            ctx.fillStyle = bG; ctx.beginPath(); ctx.moveTo(cx-120, 512); ctx.lineTo(cx+120, 512); ctx.lineTo(cx+115, 250); ctx.lineTo(cx-115, 250); ctx.closePath(); ctx.fill();
+            if (level >= 5) {
+                ctx.fillStyle = level >= 15 ? '#fff' : '#334155';
+                ctx.beginPath(); ctx.arc(cx - 120, 275, 52, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(cx + 120, 275, 52, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.fillStyle = '#ffdbac'; ctx.beginPath(); ctx.arc(cx, 195, 105, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = level >= 20 ? '#6366f1' : '#111827';
+            ctx.beginPath(); ctx.arc(cx - 45, 190, 15, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(cx + 45, 190, 15, 0, Math.PI * 2); ctx.fill();
+            const hCol = gender === 'male' ? '#1e293b' : '#e11d48';
+            ctx.fillStyle = hCol; ctx.beginPath(); ctx.arc(cx, 140, 120, Math.PI, 0); ctx.fill();
+            if(Math.abs(hairHash)%2===0) { ctx.fillRect(cx-120, 140, 60, 210); ctx.fillRect(cx+60, 140, 60, 210); } 
+            else { ctx.fillRect(cx-120, 140, 240, 80); ctx.clearRect(cx-30, 140, 60, 40); }
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createLabelTexture(s) {
+            const canvas = document.createElement('canvas'); canvas.width = 400; canvas.height = 200;
+            const ctx = canvas.getContext('2d'); const rank = getRank(s.role, s.level);
+            ctx.fillStyle = 'rgba(10, 15, 32, 0.98)'; ctx.roundRect(0, 0, 400, 180, 45); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.font = 'bold 58px Noto Sans TC'; ctx.fillText(s.name, 200, 85);
+            ctx.fillStyle = rank.badge === 'rank-gold' || rank.badge === 'rank-legendary' ? '#fbbf24' : '#6366f1';
+            ctx.font = 'bold 34px Noto Sans TC'; ctx.fillText(rank.title + ` (LV.${s.level})`, 200, 145);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- 初始化與持久化 ---
+
+        function updateClassSelector() {
+            const selector = document.getElementById('classSelector');
+            if (!selector) return;
+            selector.innerHTML = availableClasses.map(c => `<option value="${c}" ${c === currentClass ? 'selected' : ''}>${c}</option>`).join('');
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('hero_rpg_backup_v68_final', JSON.stringify(localDataStore));
+            localStorage.setItem('hero_rpg_classes_v68_final', JSON.stringify(availableClasses));
+            localStorage.setItem('hero_rpg_last_class_v68_final', currentClass);
+        }
+
+        function loadFromLocalStorage() {
+            const backup = localStorage.getItem('hero_rpg_backup_v68_final');
+            const classesBackup = localStorage.getItem('hero_rpg_classes_v68_final');
+            const lastClassBackup = localStorage.getItem('hero_rpg_last_class_v68_final');
+
+            if (backup) {
+                try {
+                    localDataStore = JSON.parse(backup);
+                    if (classesBackup) availableClasses = JSON.parse(classesBackup);
+                    else availableClasses = Object.keys(localDataStore);
+                } catch(e) { console.error("Restore failed", e); }
+            }
+            if (!availableClasses || availableClasses.length === 0) availableClasses = ["冒險組 A"];
+            if (!localDataStore[availableClasses[0]]) localDataStore[availableClasses[0]] = [];
+            currentClass = (lastClassBackup && availableClasses.includes(lastClassBackup)) ? lastClassBackup : availableClasses[0];
             updateClassSelector();
         }
 
-        function saveData() {
-            localStorage.setItem('rpg_classes', JSON.stringify(availableClasses));
-            localStorage.setItem('rpg_data', JSON.stringify(localDataStore));
-            localStorage.setItem('rpg_last_class', currentClass);
+        function getStableRole(name) {
+            const roles = ['warrior', 'mage', 'assassin'];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
+            return roles[hash % 3];
         }
 
-        function updateClassSelector() {
-            const sel = document.getElementById('classSelector');
-            sel.innerHTML = '';
-            availableClasses.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = opt.innerText = c;
-                if (c === currentClass) opt.selected = true;
-                sel.appendChild(opt);
-            });
+        // --- 核心系統初始化 ---
+
+        async function initFirebase() {
+            const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth);
+            onAuthStateChanged(auth, (u) => { user = u; if (user) loadGuildConfig(); });
         }
 
-        // --- 遊戲引擎啟動 ---
-        window.startGame = () => {
-            SoundFX.click();
-            document.getElementById('title-screen').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('title-screen').remove();
-                document.getElementById('ui-layer').classList.remove('hidden');
-                initData();
-                init3D();
-                switchClass(currentClass);
-                animate();
-            }, 500);
-        };
+        function initLocalData() {
+            loadFromLocalStorage(); 
+            switchClass(currentClass);
+        }
 
         function init3D() {
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 20000);
             renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas'), antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制 PixelRatio 防止平板過熱
-            
+            renderer.setPixelRatio(window.devicePixelRatio);
+            camera.position.set(0, 0, 160);
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
-            scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-
-            // 背景星空
-            const starGeo = new THREE.BufferGeometry();
-            const starPos = [];
-            for(let i=0; i<3000; i++) starPos.push((Math.random()-0.5)*2000, (Math.random()-0.5)*2000, (Math.random()-0.5)*2000);
+            
+            const starGeo = new THREE.BufferGeometry(); const starPos = [];
+            for(let i=0; i<12000; i++) starPos.push((Math.random()-0.5)*12000, (Math.random()-0.5)*10000, (Math.random()-0.5)*12000);
             starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-            const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x6366f1, size: 1.5 }));
-            scene.add(stars);
+            starField = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x6366f1, size: 2.8, transparent: true, opacity: 0.85 }));
+            scene.add(starField);
+            scene.add(new THREE.AmbientLight(0xffffff, 2.0));
 
-            window.addEventListener('resize', onWindowResize);
             const canvas = renderer.domElement;
-            canvas.addEventListener('pointerdown', e => { isPointerDown = true; lastPointerX = e.clientX; lastPointerY = e.clientY; isMovingCamera = false; });
-            canvas.addEventListener('pointermove', e => {
-                if (!isPointerDown) return;
-                const dx = e.clientX - lastPointerX; const dy = e.clientY - lastPointerY;
-                if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-                    isMovingCamera = true;
-                    cameraBaseX -= dx * (camera.position.z / 1000);
-                    cameraBaseY += dy * (camera.position.z / 1000);
-                }
-                lastPointerX = e.clientX; lastPointerY = e.clientY;
-            });
-            canvas.addEventListener('pointerup', e => {
-                if (!isMovingCamera) handleCanvasClick(e);
-                isPointerDown = false;
-            });
+            canvas.addEventListener('pointerdown', onPointerDown);
+            canvas.addEventListener('pointermove', onPointerMove);
+            canvas.addEventListener('pointerup', onPointerUp);
+            canvas.addEventListener('wheel', onMouseWheel, { passive: false });
+            canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+            window.addEventListener('resize', onWindowResize);
         }
 
-        function handleCanvasClick(e) {
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        async function loadGuildConfig() {
+            if (!user) return;
+            const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'global'));
+            if (snap.exists() && snap.data().classes) {
+                availableClasses = snap.data().classes;
+                availableClasses.forEach(c => { if(!localDataStore[c]) localDataStore[c] = []; });
+            }
+            updateClassSelector(); 
+            switchClass(currentClass);
+        }
+
+        // --- 交互處理核心函式 ---
+
+        function processClick(clientX, clientY) {
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(Object.values(charMeshes));
             if (intersects.length > 0) {
                 const id = intersects[0].object.userData.id;
-                changePoints(id, 1);
+                window.changePoints(id, 1);
             }
         }
 
-        window.switchClass = (name) => {
-            currentClass = name;
-            students = localDataStore[name] || [];
-            
-            // 清理舊物件
-            Object.values(charMeshes).forEach(m => scene.remove(m));
-            Object.values(labelSprites).forEach(m => scene.remove(m));
-            charMeshes = {}; labelSprites = {};
-            
-            renderStudentList();
-            sync3D(true); // 強制重新定位相機
-            saveData();
-        };
+        function onPointerDown(e) { isPointerDown = true; pointerStartX = e.clientX; pointerStartY = e.clientY; lastPointerX = e.clientX; lastPointerY = e.clientY; isMovingCamera = false; }
+        function onPointerMove(e) {
+            if (!isPointerDown) return;
+            const dx = e.clientX - lastPointerX; const dy = e.clientY - lastPointerY;
+            const totalDist = Math.hypot(e.clientX - pointerStartX, e.clientY - pointerStartY);
+            if (totalDist > 8) { isMovingCamera = true; const sensitivity = camera.position.z / 1200; cameraBaseX -= dx * sensitivity; cameraBaseY += dy * sensitivity; }
+            lastPointerX = e.clientX; lastPointerY = e.clientY;
+        }
+        function onPointerUp(e) { if (!isMovingCamera) processClick(e.clientX, e.clientY); isPointerDown = false; isMovingCamera = false; }
+        function onMouseWheel(e) { e.preventDefault(); cameraBaseZ = Math.min(Math.max(cameraBaseZ + e.deltaY * 0.1, 60), 2000); }
+        function onTouchStart(e) { if (e.touches.length === 2) initialPinchDistance = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); }
+        function onTouchMove(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault(); const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                cameraBaseZ = Math.min(Math.max(cameraBaseZ + (initialPinchDistance - dist) * 0.8, 60), 2000); initialPinchDistance = dist;
+            }
+        }
+        function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); sync3D(); }
 
-        const ROLES = {
-            warrior: { title: '戰士', color: '#ef4444' },
-            mage: { title: '法師', color: '#8b5cf6' },
-            assassin: { title: '刺客', color: '#10b981' }
-        };
+        // --- 3D 同步與渲染邏輯 (對齊修正版) ---
 
-        function getRank(lv) {
-            if (lv >= 20) return { title: '傳說英雄', badge: 'rank-legendary' };
-            if (lv >= 10) return { title: '金牌冒險者', badge: 'rank-gold' };
-            if (lv >= 5) return { title: '資深隊員', badge: 'rank-silver' };
-            return { title: '初心者', badge: 'rank-bronze' };
+        function sync3D() {
+            if (!scene || students.length === 0) return;
+            const ids = students.map(s => s.id);
+            Object.keys(charMeshes).forEach(id => { 
+                if (!ids.includes(id)) { 
+                    if(charMeshes[id].material.map) charMeshes[id].material.map.dispose();
+                    scene.remove(charMeshes[id]); 
+                    if(labelSprites[id].material.map) labelSprites[id].material.map.dispose();
+                    scene.remove(labelSprites[id]); 
+                    delete charMeshes[id]; delete labelSprites[id]; 
+                } 
+            });
+            const cols = 5; const gap = 48;
+            const sidebarW = document.getElementById('sidebar').offsetWidth || 320;
+            const screenW = window.innerWidth; const availableW = screenW - sidebarW; 
+            const actCols = Math.min(students.length, cols);
+            const actRows = Math.ceil(students.length / cols);
+            const groupW = (actCols - 1) * gap; const groupH = (actRows - 1) * gap * 1.5;
+            const fovRad = camera.fov * Math.PI / 360; const visRatio = availableW / screenW;
+            const reqZ_W = (groupW / visRatio) / (2 * Math.tan(fovRad) * camera.aspect);
+            const reqZ_H = groupH / (2 * Math.tan(fovRad));
+            const targetZ = Math.max(180, reqZ_W * 1.85, reqZ_H * 1.85); 
+            const totalWWorld = 2 * Math.tan(fovRad) * targetZ * camera.aspect;
+            const offsetX = (sidebarW / screenW) * totalWWorld * 0.6; 
+
+            if (!isMovingCamera && !isPointerDown) { cameraBaseX = -offsetX; cameraBaseY = 0; cameraBaseZ = targetZ; }
+
+            students.forEach((s, i) => {
+                const curRow = Math.floor(i / cols);
+                const rowLen = (curRow === actRows - 1) ? (students.length % cols || cols) : cols;
+                const x = (i % cols - (rowLen - 1) / 2) * gap; const y = -curRow * gap * 1.5;
+                const lv = s.level || 1; const scale = 22 + (lv * 0.35);
+                
+                if (!charMeshes[s.id]) {
+                    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: createCharTexture(s.role, lv, s.gender, s.id), transparent: true }));
+                    sp.position.set(x, y, 0); sp.scale.set(scale, scale, 1); sp.userData = { id: s.id, lastLv: lv };
+                    charMeshes[s.id] = sp; scene.add(sp);
+                    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: createLabelTexture(s), transparent: true }));
+                    label.scale.set(24, 12, 1); label.position.set(x, y + scale/2 + 8, 5);
+                    labelSprites[s.id] = label; scene.add(label);
+                } else {
+                    const sp = charMeshes[s.id];
+                    if (sp.userData.lastLv !== lv) { if(sp.material.map) sp.material.map.dispose(); sp.material.map = createCharTexture(s.role, lv, s.gender, s.id); sp.userData.lastLv = lv; }
+                    sp.position.lerp(new THREE.Vector3(x, y, 0), 0.1); sp.scale.lerp(new THREE.Vector3(scale, scale, 1), 0.1);
+                    const label = labelSprites[s.id];
+                    if(label) { 
+                        label.position.lerp(new THREE.Vector3(x, y + scale/2 + 8, 5), 0.1);
+                        if(label.material.map) label.material.map.dispose(); label.material.map = createLabelTexture(s); 
+                    }
+                }
+            });
         }
 
-        // --- 3D 物件生成 ---
-        function createCharTexture(s) {
-            const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            const color = ROLES[s.role]?.color || '#fff';
-            
-            ctx.fillStyle = color;
-            ctx.beginPath(); ctx.arc(128, 160, 60, 0, Math.PI*2); ctx.fill(); // 身體
-            ctx.fillStyle = '#ffdbac';
-            ctx.beginPath(); ctx.arc(1
+        // --- 應用程式入口 ---
+
+        window.startGame = () => {
+            SoundSystem.init(); SoundSystem.click();
+            document.getElementById('title-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('title-screen').remove();
+                document.getElementById('ui-layer').classList.remove('hidden');
+                init3D();
+                if (isLocal) initLocalData(); else initFirebase();
+                animate();
+            }, 1000);
+        };
+
+        window.switchClass = (className) => {
+            currentClass = className;
+            students = []; renderStudentList();
+            Object.keys(charMeshes).forEach(id => { 
+                if(charMeshes[id].material.map) charMeshes[id].material.map.dispose();
+                scene.remove(charMeshes[id]); 
+                if(labelSprites[id].material.map) labelSprites[id].material.map.dispose();
+                scene.remove(labelSprites[id]); 
+            });
+            charMeshes = {}; labelSprites = {};
+
+            if (isLocal) { 
+                students = [...(localDataStore[className] || [])];
+                renderStudentList(); sync3D(); saveToLocalStorage(); return; 
+            }
+            if (unsubscribe) unsubscribe();
+            unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'students_' + className), (snap) => {
+                const newData = []; snap.forEach(d => newData.push({ id: d.id, ...d.data() }));
+                if (currentClass === className) { students = newData.sort((a,b) => (a.order || 0) - (b.order || 0)); renderStudentList(); sync3D(); }
+            });
+        };
+
+        window.renderStudentList = () => {
+            const search = document.getElementById('studentSearch').value.toLowerCase();
+            const container = document.getElementById('studentListUI'); container.innerHTML = '';
+            students.filter(s => s.name.toLowerCase().includes(search)).forEach(s => {
+                const rank = getRank(s.role, s.level); const progress = ((s.points || 0) % 5) / 5 * 100;
+                const div = document.createElement('div');
+                div.className = "mb-4 bg-slate-900/90 border-2 border-slate-800 p-6 rounded-[2rem] hover:border-indigo-500 transition-all group pointer-events-auto shadow-2xl";
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-4 flex-nowrap">
+                        <div class="flex items-center gap-4 flex-grow overflow-hidden">
+                            <span class="text-3xl filter drop-shadow-xl flex-shrink-0">${s.gender==='male'?'👤':'👩'}</span>
+                            <div class="flex flex-col overflow-hidden">
+                                <h4 class="text-base font-black text-white tracking-tight truncate">${s.name}</h4>
+                                <div class="mt-1 flex-shrink-0"><span class="rank-badge ${rank.badge}">${rank.title}</span></div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
+                            <button onclick="changePoints('${s.id}', -1)" class="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-xl text-lg font-bold border-2 border-slate-700 shadow-lg">-</button>
+                            <button onclick="changePoints('${s.id}', 1)" class="w-10 h-10 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-lg font-bold border-2 border-indigo-400 shadow-[0_0_15px_#6366f1]">+</button>
+                        </div>
+                    </div>
+                    <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden mb-3 border border-slate-800 shadow-inner">
+                        <div class="h-full bg-gradient-to-r from-indigo-600 via-indigo-400 to-cyan-400 transition-all duration-1000 shadow-[0_0_12px_#6366f1]" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="flex justify-between items-center px-2">
+                        <div class="text-[13px] font-black text-cyan-400 tracking-widest drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">XP: <span class="text-white text-sm ml-1">${s.points || 0}</span></div>
+                        <div class="text-[13px] font-black text-indigo-300 uppercase tracking-widest">LV: <span class="text-white text-sm ml-1">${s.level || 1}</span></div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        };
+
+        window.changePoints = async (id, delta) => {
+            const idx = students.findIndex(x => x.id === id); if (idx === -1) return;
+            const op = students[idx].points || 0; const ol = students[idx].level || 1;
+            const np = Math.max(0, op + delta); const nl = Math.floor(np / 5) + 1;
+            students[idx].points = np; students[idx].level = nl;
+            renderStudentList(); sync3D(); 
+            if (delta > 0) { SoundSystem.coin(); spawnParticles(id, 15); if (nl > ol) triggerLevelUp(students[idx], ol, nl); } else SoundSystem.click();
+            try {
+                if (isLocal) { localDataStore[currentClass] = [...students]; saveToLocalStorage(); } 
+                else { if (!user) return; await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students_' + currentClass, id), { points: np, level: nl }); }
+            } catch (e) {
+                students[idx].points = op; students[idx].level = ol; renderStudentList(); sync3D();
+            }
+        };
+
+        function triggerLevelUp(s, ol, nl) {
+            const sprite = charMeshes[s.id]; if (!sprite) return;
+            const rank = getRank(s.role, nl); const orank = getRank(s.role, ol);
+            if (rank.title !== orank.title) {
+                SoundSystem.evolve();
+                const box = document.getElementById('notice-box'); document.getElementById('notice-text').innerText = `${s.name} 晉升為 ${rank.title}！`;
+                box.classList.remove('opacity-0', 'scale-50', 'translate-y-20'); document.body.classList.add('shake-effect');
+                setTimeout(() => { box.classList.add('opacity-0', 'scale-50', 'translate-y-20'); document.body.classList.remove('shake-effect'); }, 4500);
+            } else {
+                SoundSystem.levelUp();
+                const canvasText = document.createElement('canvas'); canvasText.width = 512; canvasText.height = 128;
+                const ctx = canvasText.getContext('2d'); ctx.font = "bold 90px 'Noto Sans TC'";
+                ctx.fillStyle = "#34d399"; ctx.textAlign = "center"; ctx.shadowColor = "black"; ctx.shadowBlur = 20; ctx.fillText("LEVEL UP!", 256, 90);
+                const ft = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvasText), transparent: true }));
+                ft.position.copy(sprite.position).y += 10; ft.scale.set(15, 3.75, 1); ft.userData = { life: 1.0 };
+                floatingTexts.push(ft); scene.add(ft);
+            }
+        }
+
+        function spawnParticles(id, count) {
+            const sprite = charMeshes[id]; if (!sprite) return;
+            for(let i=0; i<count; i++){
+                const p = new THREE.Sprite(new THREE.SpriteMaterial({ map: (function(){ const c = document.createElement('canvas'); c.width=64; c.height=64; const t = c.getContext('2d'); t.fillStyle='#fbbf24'; t.beginPath(); t.arc(32,32,24,0,Math.PI*2); t.fill(); return new THREE.CanvasTexture(c); })(), transparent: true }));
+                p.position.copy(sprite.position); p.scale.set(1.5, 1.5, 1);
+                p.userData = { vx: (Math.random()-0.5)*2.5, vy: Math.random()*2.5 + 1.2, life: 1.0 };
+                particles.push(p); scene.add(p);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate); const t = Date.now() * 0.002;
+            if (starField) { starField.rotation.y += 0.0008; starField.rotation.x += 0.00025; }
+            camera.position.x = THREE.MathUtils.lerp(camera.position.x, cameraBaseX, 0.1);
+            camera.position.y = THREE.MathUtils.lerp(camera.position.y, cameraBaseY, 0.1);
+            camera.position.z = THREE.MathUtils.lerp(camera.position.z, cameraBaseZ, 0.1);
+            Object.values(charMeshes).forEach(m => { m.position.y += Math.sin(t + m.position.x) * 0.08; m.rotation.z = Math.sin(t * 0.5 + m.position.x) * 0.05; });
+            for(let i=particles.length-1; i>=0; i--){
+                particles[i].position.x += particles[i].userData.vx; particles[i].position.y += particles[i].userData.vy;
+                particles[i].userData.life -= 0.025; particles[i].material.opacity = particles[i].userData.life;
+                if(particles[i].userData.life <= 0){ scene.remove(particles[i]); particles.splice(i, 1); }
+            }
+            for(let i=floatingTexts.length-1; i>=0; i--){
+                floatingTexts[i].position.y += 0.18; floatingTexts[i].userData.life -= 0.015; floatingTexts[i].material.opacity = floatingTexts[i].userData.life;
+                if(floatingTexts[i].userData.life <= 0){ scene.remove(floatingTexts[i]); floatingTexts.splice(i, 1); }
+            }
+            renderer.render(scene, camera);
+        }
+
+        // --- 全域 UI 操作 ---
+
+        window.showModal = (title, text, confirmFn, type = 'input') => {
+            SoundSystem.click(); document.getElementById('modalTitle').innerText = title; document.getElementById('modalText').innerText = text;
+            document.getElementById('modalInputArea').classList.toggle('hidden', type !== 'input');
+            document.getElementById('modalTextareaArea').classList.toggle('hidden', type !== 'textarea');
+            document.getElementById('modalConfirmBtn').onclick = () => { confirmFn(type === 'input' ? document.getElementById('modalInput').value : document.getElementById('modalTextarea').value); closeModal(); };
+            document.getElementById('modal').classList.remove('hidden');
+        };
+        window.closeModal = () => document.getElementById('modal').classList.add('hidden');
+
+        window.promptAddClass = () => {
+            window.showModal("探索新據點", "請輸入據點神秘代號：", async (name) => {
+                if (name && !availableClasses.includes(name)) {
+                    availableClasses.push(name); localDataStore[name] = []; 
+                    saveToLocalStorage(); updateClassSelector(); switchClass(name);
+                }
+            });
+        };
+
+        window.editClassList = () => {
+            const target = currentClass;
+            window.showModal(`英雄召喚 (${target})`, "每行輸入英雄姓名：", async (text) => {
+                const names = text.split('\n').map(n => n.trim()).filter(n => n !== '');
+                const cleanNames = [...new Set(names)];
+                if (isLocal) { 
+                    const list = cleanNames.map((n, i) => ({ id: 'l_'+Date.now()+i, name: n, role: getStableRole(n), points: 0, level: 1, gender: i%2?'male':'female', order: i })); 
+                    localDataStore[target] = list; saveToLocalStorage();
+                    if(currentClass === target) { students = list; renderStudentList(); sync3D(); }
+                } else {
+                    for (let n of cleanNames) {
+                        const id = n.replace(/\s+/g, '_'); const ref = doc(db, 'artifacts', appId, 'public', 'data', 'students_' + target, id);
+                        if (!(await getDoc(ref)).exists()) await setDoc(ref, { name: n, points: 0, level: 1, role: getStableRole(n), gender: Math.random()>0.5?'male':'female', order: Date.now() });
+                    }
+                }
+            }, 'textarea');
+            document.getElementById('modalTextarea').value = students.map(s => s.name).join('\n');
+        };
+
+        window.confirmDeleteClass = () => {
+            window.showModal("摧毀文明據點", `確認要解散「${currentClass}」？`, async () => {
+                delete localDataStore[currentClass]; availableClasses = availableClasses.filter(c => c !== currentClass);
+                if (availableClasses.length === 0) { availableClasses = ["冒險組 A"]; localDataStore["冒險組 A"] = []; }
+                currentClass = availableClasses[0];
+                saveToLocalStorage(); updateClassSelector(); switchClass(currentClass);
+            }, 'none');
+        };
+
+        window.exportData = () => { const csv = "\uFEFF據點,姓名,職位,等級,經驗\n" + students.map(s => `${currentClass},${s.name},${getRank(s.role, s.level).title},${s.level},${s.points}`).join('\n'); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `RPG_Report.csv`; link.click(); };
+        window.onload = () => { document.oncontextmenu = (e) => e.preventDefault(); };
+    </script>
+</body>
+</html>
