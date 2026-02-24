@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>人生不能重來 RPG - 傳奇冒險系統 V6.5 Touch Enabled</title>
+    <title>人生不能重來 RPG - 傳奇冒險系統 V6.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -16,12 +16,11 @@
             font-family: 'Noto Sans TC', sans-serif; 
             color: #f8fafc;
             user-select: none;
-            touch-action: none; /* 防止瀏覽器預設手勢干擾 3D 操作 */
+            touch-action: none; /* 平板手勢核心：禁止預設縮放行為 */
         }
         
         canvas { display: block; cursor: move; }
 
-        /* 側邊欄玻璃擬態 */
         .glass-panel {
             background: rgba(10, 15, 32, 0.98);
             backdrop-filter: blur(40px);
@@ -41,16 +40,10 @@
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
 
-        @keyframes shake {
-            0%, 100% { transform: translate(0, 0); }
-            20% { transform: translate(-12px, 12px); }
-            60% { transform: translate(12px, -12px); }
-        }
-        .shake-effect { animation: shake 0.2s ease-in-out 3; }
-
+        /* 修正文字直書問題的 Badge */
         .rank-badge {
             display: inline-block;
-            white-space: nowrap;
+            white-space: nowrap; 
             min-width: max-content;
             padding: 4px 14px;
             font-size: 11px;
@@ -70,50 +63,44 @@
 </head>
 <body>
 
-    <!-- 標題畫面 -->
     <div id="title-screen" class="fixed inset-0 flex flex-col items-center justify-center transition-opacity duration-1000">
         <h1 class="pixel-title-main mb-4">人生不能重來 RPG</h1>
-        <p class="text-indigo-400 font-bold tracking-[0.6em] mb-14 uppercase opacity-80">Legendary Adventure System</p>
+        <p class="text-indigo-400 font-bold tracking-[0.6em] mb-14 uppercase opacity-80">Legendary Adventure Engine</p>
         <button onclick="startGame()" class="start-btn group px-24 py-10 rounded-[2.5rem] relative overflow-hidden transition-all hover:scale-110">
-            <span class="relative z-10 text-4xl font-black text-white press-start">PRESS START</span>
+            <span class="relative z-10 text-4xl font-black text-white">PRESS START</span>
             <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
         </button>
-        <p class="mt-20 text-slate-500 font-mono text-xs tracking-widest uppercase">V6.5 Tablet & Touch Optimized</p>
+        <p class="mt-20 text-slate-500 font-mono text-xs tracking-widest uppercase">V6.6 Persistence & Visual Fix</p>
     </div>
 
-    <!-- UI 層 -->
     <div id="ui-layer" class="hidden fixed inset-0 z-10 pointer-events-none flex">
         <div id="sidebar" class="w-80 h-full glass-panel pointer-events-auto flex flex-col p-6 shadow-2xl">
             <header class="mb-10">
-                <h2 class="text-indigo-400 font-black text-2xl italic tracking-tighter flex items-center gap-3">
-                    <span class="text-3xl filter drop-shadow-md">🛡️</span> HEROES GUILD
-                </h2>
-                <div class="h-1.5 w-24 bg-gradient-to-r from-indigo-500 to-transparent mt-2 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
+                <h2 class="text-indigo-400 font-black text-2xl italic tracking-tighter flex items-center gap-3">🛡️ HEROES GUILD</h2>
+                <div class="h-1.5 w-24 bg-gradient-to-r from-indigo-500 to-transparent mt-2 rounded-full"></div>
             </header>
 
             <div class="space-y-6 mb-8">
                 <div>
-                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] ml-1">戰區地圖控制</label>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] ml-1">據點切換</label>
                     <div class="flex gap-2 mt-2">
                         <select id="classSelector" onchange="switchClass(this.value)" class="flex-grow bg-slate-950 border-2 border-slate-800 text-white rounded-2xl p-3.5 text-sm focus:outline-none focus:border-indigo-500">
                         </select>
-                        <button onclick="promptAddClass()" class="bg-indigo-600 hover:bg-indigo-500 px-5 py-2 rounded-2xl text-white font-bold shadow-lg transition-all active:scale-90">＋</button>
+                        <button onclick="promptAddClass()" class="bg-indigo-600 hover:bg-indigo-500 px-5 py-2 rounded-2xl text-white font-bold shadow-lg">＋</button>
                     </div>
                 </div>
-
-                <button onclick="editClassList()" class="w-full bg-slate-800/40 hover:bg-indigo-900/50 py-5 text-xs font-black border-2 border-slate-800 rounded-3xl flex items-center justify-center gap-3 transition-all hover:border-indigo-500 shadow-xl">
-                    ⚔️ 召喚英雄名單
+                <button onclick="editClassList()" class="w-full bg-slate-800/40 hover:bg-indigo-900/50 py-5 text-xs font-black border-2 border-slate-800 rounded-3xl flex items-center justify-center gap-3 transition-all">
+                    ⚔️ 編輯目前英雄名單
                 </button>
-                
                 <input type="text" id="studentSearch" oninput="renderStudentList()" placeholder="搜尋姓名、稱號..." 
-                    class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl px-6 py-4 text-sm text-white focus:outline-none focus:border-indigo-500 shadow-inner">
+                    class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl px-6 py-4 text-sm text-white focus:outline-none focus:border-indigo-500">
             </div>
 
             <div class="flex-grow overflow-y-auto custom-scrollbar pr-1 space-y-4" id="studentListUI"></div>
 
             <footer class="mt-6 pt-6 border-t border-slate-800 flex gap-3">
-                <button onclick="exportData()" class="flex-grow bg-emerald-700 hover:bg-emerald-600 py-4 text-xs font-black rounded-2xl transition-all shadow-xl active:scale-95">匯出戰報</button>
-                <button onclick="confirmDeleteClass()" class="bg-rose-950/80 hover:bg-rose-800 px-6 py-4 text-xs font-black rounded-2xl border border-rose-900 transition-colors">🗑️</button>
+                <button onclick="exportData()" class="flex-grow bg-emerald-700 hover:bg-emerald-600 py-4 text-xs font-black rounded-2xl transition-all">匯出戰報</button>
+                <button onclick="confirmDeleteClass()" class="bg-rose-950/80 hover:bg-rose-800 px-6 py-4 text-xs font-black rounded-2xl border border-rose-900">🗑️</button>
             </footer>
         </div>
 
@@ -127,7 +114,6 @@
 
     <canvas id="gameCanvas"></canvas>
 
-    <!-- 彈窗控制 -->
     <div id="modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-4">
         <div class="bg-slate-900 w-full max-w-lg p-12 border-2 border-slate-700 rounded-[4rem] shadow-2xl">
             <h3 id="modalTitle" class="text-3xl font-black text-indigo-400 mb-4 italic tracking-tight"></h3>
@@ -136,7 +122,7 @@
                 <input type="text" id="modalInput" class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl px-7 py-5 text-white outline-none">
             </div>
             <div id="modalTextareaArea" class="hidden mb-8">
-                <textarea id="modalTextarea" rows="12" class="w-full bg-slate-950 border-2 border-slate-800 rounded-3xl px-7 py-5 text-sm text-white outline-none custom-scrollbar" placeholder="請輸入姓名，一行一位..."></textarea>
+                <textarea id="modalTextarea" rows="12" class="w-full bg-slate-950 border-2 border-slate-800 rounded-3xl px-7 py-5 text-sm text-white outline-none custom-scrollbar"></textarea>
             </div>
             <div class="flex justify-end gap-6">
                 <button onclick="closeModal()" class="px-10 py-4 text-sm font-bold text-slate-500 hover:text-white transition-colors">CANCEL</button>
@@ -166,20 +152,6 @@
             evolve() { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => this.play(f, 'sawtooth', 0.7, 0.02), i * 180)); }
         };
 
-        // --- 浮空文字 ---
-        class FloatingText {
-            constructor(text, pos, color) {
-                const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128;
-                const ctx = canvas.getContext('2d'); ctx.font = "bold 90px 'Noto Sans TC'";
-                ctx.fillStyle = color; ctx.textAlign = "center"; ctx.shadowColor = "black"; ctx.shadowBlur = 20; ctx.fillText(text, 256, 90);
-                this.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true }));
-                this.sprite.position.copy(pos).y += 10; this.sprite.scale.set(15, 3.75, 1);
-                this.life = 1.0; scene.add(this.sprite);
-            }
-            update() { this.sprite.position.y += 0.18; this.life -= 0.015; this.sprite.material.opacity = this.life; return this.life > 0; }
-            destroy() { scene.remove(this.sprite); this.sprite.material.map.dispose(); this.sprite.material.dispose(); }
-        }
-
         // --- 全域變數 ---
         let scene, camera, renderer, raycaster, mouse;
         let starField, charMeshes = {}, labelSprites = {}, particles = [], floatingTexts = [];
@@ -187,18 +159,48 @@
         let user = null, db, auth, unsubscribe = null;
         let localDataStore = { "冒險組 A": [] }; 
 
-        // --- 交互控制變數 ---
+        // --- 交互控制 ---
         let isPointerDown = false;
         let pointerStartX = 0, pointerStartY = 0;
         let lastPointerX = 0, lastPointerY = 0;
         let cameraBaseX = 0, cameraBaseY = 0;
         let isMovingCamera = false;
         let initialPinchDistance = 0;
-        let cameraBaseZ = 140;
+        let cameraBaseZ = 160;
 
         const firebaseConfig = (function() { try { return JSON.parse(__firebase_config); } catch(e) { return null; } })();
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hero-rpg-v6-3';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hero-rpg-v6-6';
         const isLocal = !firebaseConfig;
+
+        // --- 持久化邏輯核心 (V6.6 修復點) ---
+        const saveToLocalStorage = () => {
+            localStorage.setItem('hero_rpg_backup', JSON.stringify(localDataStore));
+            localStorage.setItem('hero_rpg_last_class', currentClass);
+        };
+
+        const loadFromLocalStorage = () => {
+            const backup = localStorage.getItem('hero_rpg_backup');
+            if (backup) {
+                try {
+                    localDataStore = JSON.parse(backup);
+                    // 核心修正：將儲存的資料 Key 直接還原為可切換班級名單
+                    const keys = Object.keys(localDataStore);
+                    if (keys.length > 0) {
+                        availableClasses = keys;
+                        const last = localStorage.getItem('hero_rpg_last_class');
+                        if (last && availableClasses.includes(last)) currentClass = last;
+                        else currentClass = keys[0];
+                    }
+                } catch(e) { console.error("Persistence failed", e); }
+            }
+        };
+
+        const getStableRole = (name) => {
+            const roles = ['warrior', 'mage', 'assassin'];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
+            return roles[hash % 3];
+        };
 
         const ROLES = {
             warrior: { name: '戰士', color: '#ef4444', ranks: [{ min: 1, title: '初級劍士', badge: 'rank-bronze' }, { min: 5, title: '皇家騎士', badge: 'rank-silver' }, { min: 10, title: '傳說劍聖', badge: 'rank-gold' }, { min: 20, title: '屠龍勇者', badge: 'rank-legendary' }] },
@@ -211,10 +213,12 @@
             return [...r.ranks].reverse().find(x => lv >= x.min) || r.ranks[0];
         };
 
+        // --- 華麗角色渲染 ---
         const createCharTexture = (role, level, gender, studentId) => {
             const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512;
             const ctx = canvas.getContext('2d'); const cx = 256; const roleData = ROLES[role] || ROLES.warrior;
             const hairHash = (studentId || "abc").split("").reduce((a,b)=>((a<<5)-a)+b.charCodeAt(0),0);
+            
             if (level >= 10) {
                 const g = ctx.createRadialGradient(cx, 220, 20, cx, 220, 280);
                 g.addColorStop(0, roleData.color + '88'); if (level >= 20) g.addColorStop(0.5, '#fbbf2477'); g.addColorStop(1, 'transparent');
@@ -285,96 +289,64 @@
 
         function init3D() {
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 15000);
             renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas'), antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
-            camera.position.set(0, 0, 140);
+            camera.position.set(0, 0, 160);
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
             
             const starGeo = new THREE.BufferGeometry(); const starPos = [];
-            for(let i=0; i<9000; i++) starPos.push((Math.random()-0.5)*6000, (Math.random()-0.5)*5000, (Math.random()-0.5)*6000);
+            for(let i=0; i<10000; i++) starPos.push((Math.random()-0.5)*8000, (Math.random()-0.5)*8000, (Math.random()-0.5)*8000);
             starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-            starField = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x6366f1, size: 2.0, transparent: true, opacity: 0.7 }));
+            starField = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x6366f1, size: 2.2, transparent: true, opacity: 0.8 }));
             scene.add(starField);
             scene.add(new THREE.AmbientLight(0xffffff, 1.8));
 
-            // --- 事件監聽 (滑鼠與觸控統一) ---
             window.addEventListener('resize', onWindowResize);
             const canvas = renderer.domElement;
             canvas.addEventListener('pointerdown', onPointerDown);
             canvas.addEventListener('pointermove', onPointerMove);
             canvas.addEventListener('pointerup', onPointerUp);
             canvas.addEventListener('wheel', onMouseWheel, { passive: false });
-            
-            // 觸控專屬縮放監聽
             canvas.addEventListener('touchstart', onTouchStart, { passive: false });
             canvas.addEventListener('touchmove', onTouchMove, { passive: false });
         }
 
-        // --- 交互邏輯實作 ---
+        // --- 交互邏輯實作 (Tablet Support) ---
         function onPointerDown(e) {
             isPointerDown = true;
-            pointerStartX = e.clientX;
-            pointerStartY = e.clientY;
-            lastPointerX = e.clientX;
-            lastPointerY = e.clientY;
+            pointerStartX = e.clientX; pointerStartY = e.clientY;
+            lastPointerX = e.clientX; lastPointerY = e.clientY;
             isMovingCamera = false;
         }
 
         function onPointerMove(e) {
             if (!isPointerDown) return;
-            
-            const dx = e.clientX - lastPointerX;
-            const dy = e.clientY - lastPointerY;
+            const dx = e.clientX - lastPointerX; const dy = e.clientY - lastPointerY;
             const totalDist = Math.hypot(e.clientX - pointerStartX, e.clientY - pointerStartY);
-
-            if (totalDist > 5) {
+            if (totalDist > 8) {
                 isMovingCamera = true;
-                // 根據 Z 軸距離調整移動靈敏度
-                const sensitivity = camera.position.z / 1000;
+                const sensitivity = camera.position.z / 1200;
                 cameraBaseX -= dx * sensitivity;
                 cameraBaseY += dy * sensitivity;
             }
-
-            lastPointerX = e.clientX;
-            lastPointerY = e.clientY;
+            lastPointerX = e.clientX; lastPointerY = e.clientY;
         }
 
         function onPointerUp(e) {
-            if (!isMovingCamera) {
-                // 如果沒有明顯移動，則視為點擊
-                processClick(e.clientX, e.clientY);
-            }
+            if (!isMovingCamera) processClick(e.clientX, e.clientY);
             isPointerDown = false;
             isMovingCamera = false;
         }
 
-        function onMouseWheel(e) {
-            e.preventDefault();
-            const delta = e.deltaY * 0.05;
-            cameraBaseZ = Math.min(Math.max(cameraBaseZ + delta, 50), 1000);
-        }
-
-        // 觸控手勢處理 (雙指縮放)
-        function onTouchStart(e) {
-            if (e.touches.length === 2) {
-                initialPinchDistance = Math.hypot(
-                    e.touches[0].pageX - e.touches[1].pageX,
-                    e.touches[0].pageY - e.touches[1].pageY
-                );
-            }
-        }
-
+        function onMouseWheel(e) { e.preventDefault(); cameraBaseZ = Math.min(Math.max(cameraBaseZ + e.deltaY * 0.1, 60), 2000); }
+        function onTouchStart(e) { if (e.touches.length === 2) initialPinchDistance = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); }
         function onTouchMove(e) {
             if (e.touches.length === 2) {
                 e.preventDefault();
-                const dist = Math.hypot(
-                    e.touches[0].pageX - e.touches[1].pageX,
-                    e.touches[0].pageY - e.touches[1].pageY
-                );
-                const delta = (initialPinchDistance - dist) * 0.5;
-                cameraBaseZ = Math.min(Math.max(cameraBaseZ + delta, 50), 1000);
+                const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                cameraBaseZ = Math.min(Math.max(cameraBaseZ + (initialPinchDistance - dist) * 0.8, 60), 2000);
                 initialPinchDistance = dist;
             }
         }
@@ -384,13 +356,16 @@
             mouse.y = -(clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(Object.values(charMeshes));
-            if (intersects.length > 0) {
-                const id = intersects[0].object.userData.id;
-                changePoints(id, 1);
-            }
+            if (intersects.length > 0) changePoints(intersects[0].object.userData.id, 1);
         }
 
-        // --- Firebase 與 資料邏輯 ---
+        // --- 資料邏輯 ---
+        function initLocalData() {
+            loadFromLocalStorage(); 
+            updateClassSelector(); 
+            switchClass(currentClass);
+        }
+
         async function initFirebase() {
             const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth);
@@ -406,24 +381,6 @@
             updateClassSelector(); switchClass(currentClass);
         }
 
-        function initLocalData() {
-            const savedData = localStorage.getItem('hero_rpg_backup');
-            if(savedData) localDataStore = JSON.parse(savedData);
-            updateClassSelector(); switchClass(currentClass);
-        }
-
-        function updateClassSelector() {
-            document.getElementById('classSelector').innerHTML = availableClasses.map(c => `<option value="${c}" ${c===currentClass?'selected':''}>${c}</option>`).join('');
-        }
-
-        const saveToLocalStorage = () => localStorage.setItem('hero_rpg_backup', JSON.stringify(localDataStore));
-        const getStableRole = (name) => {
-            const roles = ['warrior', 'mage', 'assassin'];
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
-            return roles[hash % 3];
-        };
-
         window.switchClass = (className) => {
             currentClass = className;
             students = []; renderStudentList();
@@ -434,6 +391,7 @@
                 scene.remove(labelSprites[id]); 
             });
             charMeshes = {}; labelSprites = {};
+
             if (isLocal) { 
                 students = [...(localDataStore[className] || [])];
                 renderStudentList(); sync3D(); return; 
@@ -441,10 +399,7 @@
             if (unsubscribe) unsubscribe();
             unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'students_' + className), (snap) => {
                 const newData = []; snap.forEach(d => newData.push({ id: d.id, ...d.data() }));
-                if (currentClass === className) {
-                    students = newData.sort((a,b) => (a.order || 0) - (b.order || 0));
-                    renderStudentList(); sync3D();
-                }
+                if (currentClass === className) { students = newData.sort((a,b) => (a.order || 0) - (b.order || 0)); renderStudentList(); sync3D(); }
             });
         };
 
@@ -465,11 +420,11 @@
                             </div>
                         </div>
                         <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
-                            <button onclick="changePoints('${s.id}', -1)" class="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-xl text-lg font-bold border-2 border-slate-700 shadow-lg">-</button>
+                            <button onclick="changePoints('${s.id}', -1)" class="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-xl text-lg font-bold border-2 border-slate-700">-</button>
                             <button onclick="changePoints('${s.id}', 1)" class="w-10 h-10 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-lg font-bold border-2 border-indigo-400 shadow-[0_0_15px_#6366f1]">+</button>
                         </div>
                     </div>
-                    <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden mb-3 border border-slate-800 shadow-inner">
+                    <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden mb-3 shadow-inner border border-slate-800">
                         <div class="h-full bg-gradient-to-r from-indigo-600 via-indigo-400 to-cyan-400 transition-all duration-1000 shadow-[0_0_12px_#6366f1]" style="width: ${progress}%"></div>
                     </div>
                     <div class="flex justify-between items-center px-2">
@@ -493,7 +448,7 @@
                 else { if (!user) return; await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students_' + currentClass, id), { points: np, level: nl }); }
             } catch (e) {
                 students[idx].points = op; students[idx].level = ol; renderStudentList(); sync3D();
-                window.showModal("同步錯誤", "與公會通訊中斷，數據回滾。", () => {}, 'none');
+                window.showModal("同步錯誤", "數據已回滾。", () => {}, 'none');
             }
         };
 
@@ -510,7 +465,6 @@
             }
         }
 
-        // --- 自動視角初始值計算 ---
         function sync3D() {
             if (!scene || students.length === 0) return;
             const ids = students.map(s => s.id);
@@ -536,13 +490,10 @@
             const visRatio = availableW / screenW;
             const reqZ_W = (groupW / visRatio) / (2 * Math.tan(fovRad) * camera.aspect);
             const reqZ_H = groupH / (2 * Math.tan(fovRad));
-            
-            // 計算理想初始位置
             const targetZ = Math.max(180, reqZ_W * 1.8, reqZ_H * 1.8); 
             const totalWWorld = 2 * Math.tan(fovRad) * targetZ * camera.aspect;
             const offsetX = (sidebarW / screenW) * totalWWorld * 0.58; 
 
-            // 只在切換班級或剛開始時自動定位，其餘時間手動控制
             if (!isMovingCamera && !isPointerDown) {
                 cameraBaseX = -offsetX;
                 cameraBaseY = 0;
@@ -552,9 +503,9 @@
             students.forEach((s, i) => {
                 const curRow = Math.floor(i / cols);
                 const rowL = (curRow === actRows - 1) ? (students.length % cols || cols) : cols;
-                const x = (i % cols - (rowL - 1) / 2) * gap; 
-                const y = -curRow * gap * 1.5;
+                const x = (i % cols - (rowL - 1) / 2) * gap; const y = -curRow * gap * 1.5;
                 const lv = s.level || 1; const scale = 22 + (lv * 0.35);
+                
                 if (!charMeshes[s.id]) {
                     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: createCharTexture(s.role, lv, s.gender, s.id), transparent: true }));
                     sp.position.set(x, y, 0); sp.scale.set(scale, scale, 1); sp.userData = { id: s.id, lastLv: lv };
@@ -590,16 +541,10 @@
         function animate() {
             requestAnimationFrame(animate); const t = Date.now() * 0.002;
             if (starField) { starField.rotation.y += 0.0008; starField.rotation.x += 0.00025; }
-            
-            // 攝影機平滑插值到目標位置
             camera.position.x = THREE.MathUtils.lerp(camera.position.x, cameraBaseX, 0.1);
             camera.position.y = THREE.MathUtils.lerp(camera.position.y, cameraBaseY, 0.1);
             camera.position.z = THREE.MathUtils.lerp(camera.position.z, cameraBaseZ, 0.1);
-
-            Object.values(charMeshes).forEach(m => {
-                m.position.y += Math.sin(t + m.position.x) * 0.08;
-                m.rotation.z = Math.sin(t * 0.5 + m.position.x) * 0.05; 
-            });
+            Object.values(charMeshes).forEach(m => { m.position.y += Math.sin(t + m.position.x) * 0.08; m.rotation.z = Math.sin(t * 0.5 + m.position.x) * 0.05; });
             for(let i=particles.length-1; i>=0; i--){
                 particles[i].position.x += particles[i].userData.vx; particles[i].position.y += particles[i].userData.vy;
                 particles[i].userData.life -= 0.025; particles[i].material.opacity = particles[i].userData.life;
@@ -621,7 +566,7 @@
         window.closeModal = () => document.getElementById('modal').classList.add('hidden');
 
         window.promptAddClass = () => {
-            window.showModal("探索新戰區", "請輸入新據點的神秘代號：", async (name) => {
+            window.showModal("探索新戰區", "請輸入據點神秘代號：", async (name) => {
                 if (name && !availableClasses.includes(name)) {
                     availableClasses.push(name); localDataStore[name] = []; 
                     if (!isLocal && user) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'global'), { classes: availableClasses }, { merge: true });
@@ -632,7 +577,7 @@
 
         window.editClassList = () => {
             const target = currentClass;
-            window.showModal(`英雄召喚儀式 (${target})`, "每行輸入英雄姓名：", async (text) => {
+            window.showModal(`英雄召喚 (${target})`, "每行輸入英雄姓名：", async (text) => {
                 const names = text.split('\n').map(n => n.trim()).filter(n => n !== '');
                 const cleanNames = [...new Set(names)];
                 if (isLocal) { 
@@ -650,7 +595,7 @@
         };
 
         window.confirmDeleteClass = () => {
-            window.showModal("解散公會", `確認解散「${currentClass}」？資料將化為塵埃。`, async () => {
+            window.showModal("摧毀文明據點", `確認要解散「${currentClass}」？`, async () => {
                 delete localDataStore[currentClass]; availableClasses = availableClasses.filter(c => c !== currentClass);
                 saveToLocalStorage();
                 if (!isLocal && user) { for(let s of students) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students_' + currentClass, s.id)); await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'global'), { classes: availableClasses }); }
@@ -659,7 +604,7 @@
             }, 'none');
         };
 
-        window.exportData = () => { const csv = "\uFEFF據點,姓名,職位,等級,經驗\n" + students.map(s => `${currentClass},${s.name},${getRank(s.role, s.level).title},${s.level},${s.points}`).join('\n'); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `RPG_Report_${currentClass}.csv`; link.click(); };
+        window.exportData = () => { const csv = "\uFEFF據點,姓名,職位,等級,經驗\n" + students.map(s => `${currentClass},${s.name},${getRank(s.role, s.level).title},${s.level},${s.points}`).join('\n'); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `Legendary_V6.csv`; link.click(); };
         window.onload = () => { document.oncontextmenu = (e) => e.preventDefault(); };
     </script>
 </body>
