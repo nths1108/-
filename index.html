@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>人生不能重來 RPG - 傳奇冒險系統 V6.9 Speed-UP</title>
+    <title>人生不能重來 RPG - 傳奇冒險系統 V6.9.1 Stable</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -72,7 +72,6 @@
 </head>
 <body>
 
-    <!-- 初始標題畫面 -->
     <div id="title-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950 transition-opacity duration-1000">
         <h1 class="pixel-title-main mb-4">人生不能重來 RPG</h1>
         <p class="text-indigo-400 font-bold tracking-[0.6em] mb-14 uppercase opacity-80">Legendary Adventure Engine</p>
@@ -80,10 +79,9 @@
             <span class="relative z-10 text-4xl font-black text-white press-start">PRESS START</span>
             <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
         </button>
-        <p class="mt-20 text-slate-500 font-mono text-xs tracking-widest uppercase">V6.9 Speed Progression • Visual CALIBRATED</p>
+        <p class="mt-20 text-slate-500 font-mono text-xs tracking-widest uppercase">V6.9.1 Legacy Migration • Visual MASTER</p>
     </div>
 
-    <!-- UI 層 -->
     <div id="ui-layer" class="hidden fixed inset-0 z-10 pointer-events-none flex">
         <div id="sidebar" class="w-80 h-full glass-panel pointer-events-auto flex flex-col p-6 shadow-2xl">
             <header class="mb-10">
@@ -101,7 +99,7 @@
                     </div>
                 </div>
                 <button onclick="editClassList()" class="w-full bg-slate-800/40 hover:bg-indigo-900/50 py-5 text-xs font-black border-2 border-slate-800 rounded-3xl flex items-center justify-center gap-3 transition-all hover:border-indigo-500">
-                    ⚔️ 召喚英雄名單
+                    ⚔️ 編輯目前英雄名單
                 </button>
                 <input type="text" id="studentSearch" oninput="renderStudentList()" placeholder="搜尋姓名、稱號..." 
                     class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl px-6 py-4 text-sm text-white focus:outline-none focus:border-indigo-500 shadow-inner">
@@ -164,12 +162,10 @@
         let cameraBaseZ = 160;
 
         const firebaseConfig = (function() { try { return JSON.parse(__firebase_config); } catch(e) { return null; } })();
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hero-rpg-v6-9';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hero-rpg-v6-9-1';
         const isLocal = !firebaseConfig;
 
-        // --- 核心輔助函式與設定 (Hoisting) ---
-
-        // 轉職門檻調整：LV 3, 6, 9, 12
+        // --- 職稱成長門檻 (LV 3, 6, 9, 12) ---
         const ROLES = {
             warrior: { name: '戰士', color: '#ef4444', ranks: [
                 { min: 1, title: '初級劍士', badge: 'rank-bronze' }, 
@@ -194,6 +190,7 @@
             ]}
         };
 
+        // --- 工具函式 ---
         function getRank(role, lv) {
             const r = ROLES[role] || ROLES.warrior;
             return [...r.ranks].reverse().find(x => lv >= x.min) || r.ranks[0];
@@ -206,23 +203,99 @@
             return roles[hash % 3];
         }
 
+        function updateClassSelector() {
+            const selector = document.getElementById('classSelector');
+            if (!selector) return;
+            selector.innerHTML = availableClasses.map(c => `<option value="${c}" ${c === currentClass ? 'selected' : ''}>${c}</option>`).join('');
+        }
+
+        // --- 資料遷移與儲存核心 (修復點) ---
+        function saveToLocalStorage() {
+            localStorage.setItem('hero_rpg_master_backup', JSON.stringify(localDataStore));
+            localStorage.setItem('hero_rpg_master_classes', JSON.stringify(availableClasses));
+            localStorage.setItem('hero_rpg_master_last_class', currentClass);
+        }
+
+        function loadFromLocalStorage() {
+            // 定義所有可能的舊版本鑰匙
+            const legacyBackups = ['hero_rpg_backup_v69', 'hero_rpg_backup_v68_final', 'hero_rpg_backup'];
+            const legacyClasses = ['hero_rpg_classes_v69', 'hero_rpg_classes_v68_final', 'hero_rpg_classes'];
+            const legacyLastClass = ['hero_rpg_last_class_v69', 'hero_rpg_last_class_v68_final', 'hero_rpg_last_class'];
+
+            let foundBackup = localStorage.getItem('hero_rpg_master_backup');
+            let foundClasses = localStorage.getItem('hero_rpg_master_classes');
+            let foundLastClass = localStorage.getItem('hero_rpg_master_last_class');
+
+            // 如果沒找到當前版本的資料，嘗試從舊版本中提取
+            if (!foundBackup) {
+                for(let key of legacyBackups) {
+                    const data = localStorage.getItem(key);
+                    if(data) { foundBackup = data; break; }
+                }
+            }
+            if (!foundClasses) {
+                for(let key of legacyClasses) {
+                    const data = localStorage.getItem(key);
+                    if(data) { foundClasses = data; break; }
+                }
+            }
+            if (!foundLastClass) {
+                for(let key of legacyLastClass) {
+                    const data = localStorage.getItem(key);
+                    if(data) { foundLastClass = data; break; }
+                }
+            }
+
+            if (foundBackup) {
+                try {
+                    localDataStore = JSON.parse(foundBackup);
+                    if (foundClasses) availableClasses = JSON.parse(foundClasses);
+                    else availableClasses = Object.keys(localDataStore);
+                } catch(e) { console.error("Restore failed", e); }
+            }
+
+            if (!availableClasses || availableClasses.length === 0) availableClasses = ["冒險組 A"];
+            if (!localDataStore[availableClasses[0]]) localDataStore[availableClasses[0]] = [];
+            currentClass = (foundLastClass && availableClasses.includes(foundLastClass)) ? foundLastClass : availableClasses[0];
+            
+            updateClassSelector();
+            // 立即執行一次儲存，將舊資料永久固化到新版本鑰匙中
+            saveToLocalStorage();
+        }
+
+        // --- 音效引擎 ---
+        const SoundSystem = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(freq, type, duration, vol = 0.1) {
+                this.init(); const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration);
+            },
+            click() { this.play(850, 'sine', 0.12, 0.06); },
+            coin() { this.play(1100, 'triangle', 0.2, 0.06); setTimeout(() => this.play(1400, 'triangle', 0.2, 0.06), 60); },
+            levelUp() { this.play(600, 'square', 0.3, 0.04); setTimeout(() => this.play(900, 'square', 0.4, 0.04), 120); },
+            evolve() { [440, 554, 659, 880, 1108].forEach((f, i) => setTimeout(() => this.play(f, 'sawtooth', 0.7, 0.025), i * 180)); }
+        };
+
+        // --- 核心渲染函式 ---
         function createCharTexture(role, level, gender, studentId) {
             const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512;
             const ctx = canvas.getContext('2d'); const cx = 256; const roleData = ROLES[role] || ROLES.warrior;
             const hairHash = (studentId || "abc").split("").reduce((a,b)=>((a<<5)-a)+b.charCodeAt(0),0);
             
-            // 隨等級演化的視覺效果 (配合轉職門檻)
-            if (level >= 6) { // 晉升傳奇後出現光環
+            // 視覺演化與等級掛鉤 (Tier: 3, 6, 9, 12)
+            if (level >= 6) { 
                 const g = ctx.createRadialGradient(cx, 220, 20, cx, 220, 280);
                 g.addColorStop(0, roleData.color + '88'); if (level >= 12) g.addColorStop(0.5, '#fbbf2477'); g.addColorStop(1, 'transparent');
                 ctx.fillStyle = g; ctx.fillRect(0,0,512,512);
             }
-            if (level >= 3) { // 晉升精英後穿戴披風
+            if (level >= 3) {
                 ctx.fillStyle = level >= 9 ? '#1e1b4b' : (role === 'assassin' ? '#064e3b' : '#4c0519');
                 ctx.beginPath(); ctx.moveTo(cx-135, 285); ctx.lineTo(cx+135, 285); ctx.lineTo(cx+190, 512); ctx.lineTo(cx-190, 512); ctx.closePath(); ctx.fill();
             }
             ctx.save();
-            // 武器光澤演進
             const wCol = level >= 12 ? '#fbbf24' : (level >= 6 ? '#f1f5f9' : (level >= 3 ? '#cbd5e1' : '#78350f'));
             ctx.fillStyle = wCol; ctx.strokeStyle = '#000'; ctx.lineWidth = 3.5;
             if (role === 'warrior') {
@@ -240,7 +313,6 @@
                 if(level >= 6) { ctx.restore(); ctx.save(); ctx.fillStyle = wCol; ctx.strokeStyle = '#000'; ctx.translate(cx - 125, 415); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(28, -130); ctx.lineTo(-28, -130); ctx.closePath(); ctx.fill(); ctx.stroke(); }
             }
             ctx.restore();
-            // 身體演化
             const armC = level < 6 ? roleData.color : '#fbbf24';
             const bG = ctx.createLinearGradient(cx - 120, 300, cx + 120, 300);
             bG.addColorStop(0, armC); bG.addColorStop(0.5, '#fffB'); bG.addColorStop(1, armC);
@@ -269,55 +341,7 @@
             return new THREE.CanvasTexture(canvas);
         }
 
-        // --- 音效引擎 ---
-        const SoundSystem = {
-            ctx: null,
-            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
-            play(freq, type, duration, vol = 0.1) {
-                this.init(); const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
-                osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                gain.gain.setValueAtTime(vol, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration);
-            },
-            click() { this.play(850, 'sine', 0.12, 0.06); },
-            coin() { this.play(1100, 'triangle', 0.2, 0.06); setTimeout(() => this.play(1400, 'triangle', 0.2, 0.06), 60); },
-            levelUp() { this.play(600, 'square', 0.3, 0.04); setTimeout(() => this.play(900, 'square', 0.4, 0.04), 120); },
-            evolve() { [440, 554, 659, 880, 1108].forEach((f, i) => setTimeout(() => this.play(f, 'sawtooth', 0.7, 0.025), i * 180)); }
-        };
-
-        // --- 持久化管理 ---
-        function saveToLocalStorage() {
-            localStorage.setItem('hero_rpg_backup_v69', JSON.stringify(localDataStore));
-            localStorage.setItem('hero_rpg_classes_v69', JSON.stringify(availableClasses));
-            localStorage.setItem('hero_rpg_last_class_v69', currentClass);
-        }
-
-        function loadFromLocalStorage() {
-            const backup = localStorage.getItem('hero_rpg_backup_v69');
-            const classesBackup = localStorage.getItem('hero_rpg_classes_v69');
-            const lastClassBackup = localStorage.getItem('hero_rpg_last_class_v69');
-
-            if (backup) {
-                try {
-                    localDataStore = JSON.parse(backup);
-                    if (classesBackup) availableClasses = JSON.parse(classesBackup);
-                    else availableClasses = Object.keys(localDataStore);
-                } catch(e) { console.error("Restore failed", e); }
-            }
-            if (!availableClasses || availableClasses.length === 0) availableClasses = ["冒險組 A"];
-            if (!localDataStore[availableClasses[0]]) localDataStore[availableClasses[0]] = [];
-            currentClass = (lastClassBackup && availableClasses.includes(lastClassBackup)) ? lastClassBackup : availableClasses[0];
-            updateClassSelector();
-        }
-
-        function updateClassSelector() {
-            const selector = document.getElementById('classSelector');
-            if (!selector) return;
-            selector.innerHTML = availableClasses.map(c => `<option value="${c}" ${c === currentClass ? 'selected' : ''}>${c}</option>`).join('');
-        }
-
-        // --- 核心系統邏輯 ---
-
+        // --- 核心系統初始化 ---
         function init3D() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 30000);
@@ -328,11 +352,11 @@
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
             
             const starGeo = new THREE.BufferGeometry(); const starPos = [];
-            for(let i=0; i<15000; i++) starPos.push((Math.random()-0.5)*15000, (Math.random()-0.5)*12000, (Math.random()-0.5)*15000);
+            for(let i=0; i<12000; i++) starPos.push((Math.random()-0.5)*12000, (Math.random()-0.5)*10000, (Math.random()-0.5)*12000);
             starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-            starField = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x6366f1, size: 3.0, transparent: true, opacity: 0.9 }));
+            starField = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x6366f1, size: 2.8, transparent: true, opacity: 0.85 }));
             scene.add(starField);
-            scene.add(new THREE.AmbientLight(0xffffff, 2.2));
+            scene.add(new THREE.AmbientLight(0xffffff, 2.0));
 
             const canvas = renderer.domElement;
             canvas.addEventListener('pointerdown', onPointerDown);
@@ -347,10 +371,9 @@
         async function initFirebase() {
             try {
                 const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); 
-                else await signInAnonymously(auth);
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth);
                 onAuthStateChanged(auth, (u) => { user = u; if (user) loadGuildConfig(); });
-            } catch(e) { console.error("Firebase init failed", e); }
+            } catch(e) { console.error("Firebase fail", e); }
         }
 
         async function loadGuildConfig() {
@@ -360,8 +383,7 @@
                 availableClasses = snap.data().classes;
                 availableClasses.forEach(c => { if(!localDataStore[c]) localDataStore[c] = []; });
             }
-            updateClassSelector(); 
-            switchClass(currentClass);
+            updateClassSelector(); switchClass(currentClass);
         }
 
         function initLocalData() {
@@ -369,70 +391,7 @@
             switchClass(currentClass);
         }
 
-        function sync3D() {
-            if (!scene || students.length === 0) return;
-            const ids = students.map(s => s.id);
-            Object.keys(charMeshes).forEach(id => { 
-                if (!ids.includes(id)) { 
-                    if(charMeshes[id].material.map) charMeshes[id].material.map.dispose();
-                    scene.remove(charMeshes[id]); 
-                    if(labelSprites[id].material.map) labelSprites[id].material.map.dispose();
-                    scene.remove(labelSprites[id]); 
-                    delete charMeshes[id]; delete labelSprites[id]; 
-                } 
-            });
-
-            const cols = 5; const gap = 52;
-            const sidebarW = document.getElementById('sidebar').offsetWidth || 320;
-            const screenW = window.innerWidth; const availableW = screenW - sidebarW; 
-            const actCols = Math.min(students.length, cols);
-            const actRows = Math.ceil(students.length / cols);
-            const groupW = (actCols - 1) * gap; const groupH = (actRows - 1) * gap * 1.5;
-            const fovRad = camera.fov * Math.PI / 360; const visRatio = availableW / screenW;
-            const reqZ_W = (groupW / visRatio) / (2 * Math.tan(fovRad) * camera.aspect);
-            const reqZ_H = groupH / (2 * Math.tan(fovRad));
-            const targetZ = Math.max(180, reqZ_W * 1.9, reqZ_H * 1.9); 
-            const totalWWorld = 2 * Math.tan(fovRad) * targetZ * camera.aspect;
-            const offsetX = (sidebarW / screenW) * totalWWorld * 0.6; 
-
-            if (!isMovingCamera && !isPointerDown) { cameraBaseX = -offsetX; cameraBaseY = 0; cameraBaseZ = targetZ; }
-
-            students.forEach((s, i) => {
-                const curRow = Math.floor(i / cols);
-                const rowLen = (curRow === actRows - 1) ? (students.length % cols || cols) : cols;
-                const x = (i % cols - (rowLen - 1) / 2) * gap; const y = -curRow * gap * 1.5;
-                const lv = s.level || 1; const scale = 24 + (lv * 0.4);
-                
-                if (!charMeshes[s.id]) {
-                    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: createCharTexture(s.role, lv, s.gender, s.id), transparent: true }));
-                    sp.position.set(x, y, 0); sp.scale.set(scale, scale, 1); sp.userData = { id: s.id, lastLv: lv };
-                    charMeshes[s.id] = sp; scene.add(sp);
-                    
-                    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: createLabelTexture(s), transparent: true }));
-                    label.scale.set(24, 12, 1); label.position.set(x, y + scale/2 + 8, 5);
-                    labelSprites[s.id] = label; scene.add(label);
-                } else {
-                    const sp = charMeshes[s.id];
-                    if (sp.userData.lastLv !== lv) { 
-                        if(sp.material.map) sp.material.map.dispose(); 
-                        sp.material.map = createCharTexture(s.role, lv, s.gender, s.id); 
-                        sp.userData.lastLv = lv; 
-                    }
-                    sp.position.lerp(new THREE.Vector3(x, y, 0), 0.1); 
-                    sp.scale.lerp(new THREE.Vector3(scale, scale, 1), 0.1);
-                    
-                    const label = labelSprites[s.id];
-                    if(label) { 
-                        label.position.lerp(new THREE.Vector3(x, y + scale/2 + 8, 5), 0.1);
-                        if(label.material.map) label.material.map.dispose(); 
-                        label.material.map = createLabelTexture(s); 
-                    }
-                }
-            });
-        }
-
-        // --- 交互函式 ---
-
+        // --- 交互處理 ---
         function processClick(clientX, clientY) {
             mouse.x = (clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(clientY / window.innerHeight) * 2 + 1;
@@ -453,18 +412,71 @@
             lastPointerX = e.clientX; lastPointerY = e.clientY;
         }
         function onPointerUp(e) { if (!isMovingCamera) processClick(e.clientX, e.clientY); isPointerDown = false; isMovingCamera = false; }
-        function onMouseWheel(e) { e.preventDefault(); cameraBaseZ = Math.min(Math.max(cameraBaseZ + e.deltaY * 0.1, 60), 3000); }
+        function onMouseWheel(e) { e.preventDefault(); cameraBaseZ = Math.min(Math.max(cameraBaseZ + e.deltaY * 0.1, 60), 2000); }
         function onTouchStart(e) { if (e.touches.length === 2) initialPinchDistance = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); }
         function onTouchMove(e) {
             if (e.touches.length === 2) {
                 e.preventDefault(); const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-                cameraBaseZ = Math.min(Math.max(cameraBaseZ + (initialPinchDistance - dist) * 0.8, 60), 3000); initialPinchDistance = dist;
+                cameraBaseZ = Math.min(Math.max(cameraBaseZ + (initialPinchDistance - dist) * 0.8, 60), 2000); initialPinchDistance = dist;
             }
         }
         function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); sync3D(); }
 
-        // --- 核心操作 ---
+        // --- 同步與渲染 ---
+        function sync3D() {
+            if (!scene || students.length === 0) return;
+            const ids = students.map(s => s.id);
+            Object.keys(charMeshes).forEach(id => { 
+                if (!ids.includes(id)) { 
+                    if(charMeshes[id].material.map) charMeshes[id].material.map.dispose();
+                    scene.remove(charMeshes[id]); 
+                    if(labelSprites[id].material.map) labelSprites[id].material.map.dispose();
+                    scene.remove(labelSprites[id]); 
+                    delete charMeshes[id]; delete labelSprites[id]; 
+                } 
+            });
+            const cols = 5; const gap = 48;
+            const sidebarW = document.getElementById('sidebar').offsetWidth || 320;
+            const screenW = window.innerWidth; const availableW = screenW - sidebarW; 
+            const actCols = Math.min(students.length, cols);
+            const actRows = Math.ceil(students.length / cols);
+            const groupW = (actCols - 1) * gap; const groupH = (actRows - 1) * gap * 1.5;
+            const fovRad = camera.fov * Math.PI / 360; const visRatio = availableW / screenW;
+            const reqZ_W = (groupW / visRatio) / (2 * Math.tan(fovRad) * camera.aspect);
+            const reqZ_H = groupH / (2 * Math.tan(fovRad));
+            const targetZ = Math.max(180, reqZ_W * 1.85, reqZ_H * 1.85); 
+            const totalWWorld = 2 * Math.tan(fovRad) * targetZ * camera.aspect;
+            const offsetX = (sidebarW / screenW) * totalWWorld * 0.6; 
 
+            if (!isMovingCamera && !isPointerDown) { cameraBaseX = -offsetX; cameraBaseY = 0; cameraBaseZ = targetZ; }
+
+            students.forEach((s, i) => {
+                const curRow = Math.floor(i / cols);
+                const rowLen = (curRow === actRows - 1) ? (students.length % cols || cols) : cols;
+                const x = (i % cols - (rowLen - 1) / 2) * gap; const y = -curRow * gap * 1.5;
+                const lv = s.level || 1; const scale = 22 + (lv * 0.35);
+                
+                if (!charMeshes[s.id]) {
+                    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: createCharTexture(s.role, lv, s.gender, s.id), transparent: true }));
+                    sp.position.set(x, y, 0); sp.scale.set(scale, scale, 1); sp.userData = { id: s.id, lastLv: lv };
+                    charMeshes[s.id] = sp; scene.add(sp);
+                    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: createLabelTexture(s), transparent: true }));
+                    label.scale.set(24, 12, 1); label.position.set(x, y + scale/2 + 8, 5);
+                    labelSprites[s.id] = label; scene.add(label);
+                } else {
+                    const sp = charMeshes[s.id];
+                    if (sp.userData.lastLv !== lv) { if(sp.material.map) sp.material.map.dispose(); sp.material.map = createCharTexture(s.role, lv, s.gender, s.id); sp.userData.lastLv = lv; }
+                    sp.position.lerp(new THREE.Vector3(x, y, 0), 0.1); sp.scale.lerp(new THREE.Vector3(scale, scale, 1), 0.1);
+                    const label = labelSprites[s.id];
+                    if(label) { 
+                        label.position.lerp(new THREE.Vector3(x, y + scale/2 + 8, 5), 0.1);
+                        if(label.material.map) label.material.map.dispose(); label.material.map = createLabelTexture(s); 
+                    }
+                }
+            });
+        }
+
+        // --- 應用程式入口 ---
         window.startGame = () => {
             SoundSystem.init(); SoundSystem.click();
             document.getElementById('title-screen').style.opacity = '0';
@@ -487,7 +499,10 @@
                 scene.remove(labelSprites[id]); 
             });
             charMeshes = {}; labelSprites = {};
-            if (isLocal) { students = [...(localDataStore[className] || [])]; renderStudentList(); sync3D(); saveToLocalStorage(); return; }
+            if (isLocal) { 
+                students = [...(localDataStore[className] || [])];
+                renderStudentList(); sync3D(); saveToLocalStorage(); return; 
+            }
             if (unsubscribe) unsubscribe();
             unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'students_' + className), (snap) => {
                 const newData = []; snap.forEach(d => newData.push({ id: d.id, ...d.data() }));
@@ -520,7 +535,7 @@
                         <div class="h-full bg-gradient-to-r from-indigo-600 via-indigo-400 to-cyan-400 transition-all duration-1000 shadow-[0_0_12px_#6366f1]" style="width: ${progress}%"></div>
                     </div>
                     <div class="flex justify-between items-center px-2">
-                        <div class="text-[13px] font-black text-cyan-400 tracking-widest drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">XP: <span class="text-white text-sm ml-1">${s.points || 0}</span></div>
+                        <div class="text-[13px] font-black text-cyan-400 tracking-widest">XP: <span class="text-white text-sm ml-1">${s.points || 0}</span></div>
                         <div class="text-[13px] font-black text-indigo-300 uppercase tracking-widest">LV: <span class="text-white text-sm ml-1">${s.level || 1}</span></div>
                     </div>
                 `;
@@ -590,7 +605,6 @@
         }
 
         // --- UI 操作 ---
-
         window.showModal = (title, text, confirmFn, type = 'input') => {
             SoundSystem.click(); document.getElementById('modalTitle').innerText = title; document.getElementById('modalText').innerText = text;
             document.getElementById('modalInputArea').classList.toggle('hidden', type !== 'input');
